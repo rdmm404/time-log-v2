@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useReducer, useCallback, useRef } from 'react';
-import { timeLogAPI, type TimeLog } from '@app/preload';
+import { timeLogAPI, mainWindowAPI, trayEvents, type TimeLog } from '@app/preload';
 
 export interface TimerState {
   isRunning: boolean;
@@ -231,6 +231,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dispatch({ type: 'SET_ERROR', payload: { error: null } });
   }, []);
 
+  // Send timer state to tray - removed useCallback to avoid circular dependency
+  const sendTimerStateToTray = () => {
+    const timerState = {
+      isRunning: state.isRunning,
+      elapsedTime: state.elapsedTime,
+      description: state.description
+    };
+    mainWindowAPI.sendTimerStateToTray(timerState);
+  };
+
   // Restore active session on app startup (persistent timer state)
   useEffect(() => {
     const restoreActiveSession = async () => {
@@ -253,6 +263,44 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     restoreActiveSession();
   }, [calculateElapsedTime, startTimerInterval]);
+
+  // Setup tray communication
+  useEffect(() => {
+    // Set up handlers for tray timer actions
+    const unsubscribeStart = mainWindowAPI.onStartTimerFromTray(() => {
+      startTimer();
+    });
+
+    const unsubscribeStop = mainWindowAPI.onStopTimerFromTray(() => {
+      stopTimer();
+    });
+
+    // Listen for tray toggle events
+    const unsubscribeToggle = trayEvents.onToggleTimer(() => {
+      if (state.isRunning) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    });
+
+    // Listen for tray requesting current state
+    const unsubscribeStateRequest = trayEvents.onRequestCurrentState(() => {
+      sendTimerStateToTray();
+    });
+
+    return () => {
+      unsubscribeStart();
+      unsubscribeStop();
+      unsubscribeToggle();
+      unsubscribeStateRequest();
+    };
+  }, [startTimer, stopTimer, state.isRunning]);
+
+  // Send timer state updates to tray whenever relevant state changes
+  useEffect(() => {
+    sendTimerStateToTray();
+  }, [state.isRunning, state.elapsedTime, state.description]);
 
   // Cleanup interval on unmount
   useEffect(() => {

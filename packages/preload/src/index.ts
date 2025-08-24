@@ -59,4 +59,45 @@ export const timeLogAPI = {
     ipcRenderer.invoke('timelog:getRecent', limit),
 };
 
+// System tray API
+export const trayAPI = {
+  startTimer: (): Promise<void> => ipcRenderer.invoke('tray-start-timer'),
+  stopTimer: (): Promise<void> => ipcRenderer.invoke('tray-stop-timer'),
+};
+
+// System tray events
+export const trayEvents = {
+  onTimerStateUpdate: (callback: (timerState: any) => void) => {
+    ipcRenderer.on('timer-state-update', (_, timerState) => callback(timerState));
+    return () => ipcRenderer.removeAllListeners('timer-state-update');
+  },
+  
+  onToggleTimer: (callback: () => void) => {
+    ipcRenderer.on('tray-toggle-timer', callback);
+    return () => ipcRenderer.removeAllListeners('tray-toggle-timer');
+  },
+
+  onRequestCurrentState: (callback: () => void) => {
+    ipcRenderer.on('tray-request-current-state', callback);
+    return () => ipcRenderer.removeAllListeners('tray-request-current-state');
+  }
+};
+
+// Main window communication
+export const mainWindowAPI = {
+  onStartTimerFromTray: (callback: () => void) => {
+    ipcRenderer.on('start-timer-from-tray', callback);
+    return () => ipcRenderer.removeAllListeners('start-timer-from-tray');
+  },
+  
+  onStopTimerFromTray: (callback: () => void) => {
+    ipcRenderer.on('stop-timer-from-tray', callback);
+    return () => ipcRenderer.removeAllListeners('stop-timer-from-tray');
+  },
+  
+  sendTimerStateToTray: (timerState: any) => {
+    ipcRenderer.send('timer-state-changed', timerState);
+  }
+};
+
 export {sha256sum, versions, send};

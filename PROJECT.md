@@ -23,6 +23,13 @@ A minimal desktop time tracking application that allows users to easily log work
 - Automatic pause detection (system sleep/lock)
 - Live timer display with current session duration
 
+### System tray widget
+- Should open a small window on left click with basic timer start/stop controls
+- This window should also display the current timer status
+- The tray icon should relfect the timer status
+- On right click, the context menu should allow quickly starting and stopping the timer
+- Changes done via system tray should reflect on the ui immediately
+
 ### Local Data Persistence
 - Local database storage with data integrity focus
 - No user accounts or setup required

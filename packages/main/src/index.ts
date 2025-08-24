@@ -8,6 +8,7 @@ import {autoUpdater} from './modules/AutoUpdater.js';
 import {allowInternalOrigins} from './modules/BlockNotAllowdOrigins.js';
 import {allowExternalUrls} from './modules/ExternalUrls.js';
 import {createDatabaseModule} from './modules/DatabaseModule.js';
+import {createSystemTrayModule} from './modules/SystemTray.js';
 import {TimeLogService} from './services/TimeLogService.js';
 import {setupDatabaseHandlers} from './handlers/DatabaseHandlers.js';
 
@@ -15,14 +16,20 @@ import {setupDatabaseHandlers} from './handlers/DatabaseHandlers.js';
 export async function initApp(initConfig: AppInitConfig) {
   // Initialize database first
   const databaseModule = createDatabaseModule();
+  const windowManager = createWindowManagerModule({initConfig, openDevTools: import.meta.env.DEV});
   
   const moduleRunner = createModuleRunner()
-    .init(createWindowManagerModule({initConfig, openDevTools: import.meta.env.DEV}))
+    .init(windowManager)
     .init(disallowMultipleAppInstance())
     .init(terminateAppOnLastWindowClose())
     .init(hardwareAccelerationMode({enable: false}))
     .init(autoUpdater())
     .init(databaseModule)
+    .init(createSystemTrayModule({ 
+      windowManager, 
+      preloadPath: initConfig.preload.path,
+      rendererConfig: initConfig.renderer 
+    }))
 
     // Install DevTools extension if needed
     // .init(chromeDevToolsExtension({extension: 'VUEJS3_DEVTOOLS'}))
