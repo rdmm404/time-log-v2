@@ -11,7 +11,7 @@ A minimal desktop time tracking application that allows users to easily log work
 - **Framework:** Electron with TypeScript + React
 - **Architecture:** 100% client-side, no backend required
 - **Database:** Local database (SQLite recommended)
-- **UI Framework:** React with modern CSS/styled-components
+- **UI Framework:** React with TailwindCSS
 - **Build Tools:** Vite or webpack for bundling
 
 ## 3. Core Features
