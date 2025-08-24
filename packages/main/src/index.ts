@@ -7,15 +7,22 @@ import {hardwareAccelerationMode} from './modules/HardwareAccelerationModule.js'
 import {autoUpdater} from './modules/AutoUpdater.js';
 import {allowInternalOrigins} from './modules/BlockNotAllowdOrigins.js';
 import {allowExternalUrls} from './modules/ExternalUrls.js';
+import {createDatabaseModule} from './modules/DatabaseModule.js';
+import {TimeLogService} from './services/TimeLogService.js';
+import {setupDatabaseHandlers} from './handlers/DatabaseHandlers.js';
 
 
 export async function initApp(initConfig: AppInitConfig) {
+  // Initialize database first
+  const databaseModule = createDatabaseModule();
+  
   const moduleRunner = createModuleRunner()
     .init(createWindowManagerModule({initConfig, openDevTools: import.meta.env.DEV}))
     .init(disallowMultipleAppInstance())
     .init(terminateAppOnLastWindowClose())
     .init(hardwareAccelerationMode({enable: false}))
     .init(autoUpdater())
+    .init(databaseModule)
 
     // Install DevTools extension if needed
     // .init(chromeDevToolsExtension({extension: 'VUEJS3_DEVTOOLS'}))
@@ -43,4 +50,9 @@ export async function initApp(initConfig: AppInitConfig) {
     );
 
   await moduleRunner;
+
+  // Setup database handlers after initialization
+  const database = databaseModule.getDatabase();
+  const timeLogService = new TimeLogService(database);
+  setupDatabaseHandlers(timeLogService);
 }
