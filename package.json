@@ -24,9 +24,12 @@
     "typecheck": "npm run typecheck -ws --if-present",
     "create-renderer": "cd packages && node ./integrate-renderer/create-renderer.js",
     "integrate-renderer": "npm start --workspace @app/integrate-renderer",
-    "init": "npm run create-renderer && npm run integrate-renderer && npm install"
+    "init": "npm run create-renderer && npm run integrate-renderer && npm install",
+    "postinstall": "npm run rebuild",
+    "rebuild": "@electron/rebuild"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
     "@npmcli/map-workspaces": "4.0.2",
     "@playwright/test": "1.54.2",
     "@types/node": "24.3.0",
