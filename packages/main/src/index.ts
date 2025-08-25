@@ -10,6 +10,7 @@ import {allowExternalUrls} from './modules/ExternalUrls.js';
 import {createDatabaseModule} from './modules/DatabaseModule.js';
 import {createSystemTrayModule} from './modules/SystemTray.js';
 import {TimeLogService} from './services/TimeLogService.js';
+import {MainProcessTimer} from './services/MainProcessTimer.js';
 import {setupDatabaseHandlers} from './handlers/DatabaseHandlers.js';
 
 
@@ -25,11 +26,6 @@ export async function initApp(initConfig: AppInitConfig) {
     .init(hardwareAccelerationMode({enable: false}))
     .init(autoUpdater())
     .init(databaseModule)
-    .init(createSystemTrayModule({ 
-      windowManager, 
-      preloadPath: initConfig.preload.path,
-      rendererConfig: initConfig.renderer 
-    }))
 
     // Install DevTools extension if needed
     // .init(chromeDevToolsExtension({extension: 'VUEJS3_DEVTOOLS'}))
@@ -58,8 +54,19 @@ export async function initApp(initConfig: AppInitConfig) {
 
   await moduleRunner;
 
-  // Setup database handlers after initialization
+  // Setup database handlers and main process timer after initialization
   const database = databaseModule.getDatabase();
   const timeLogService = new TimeLogService(database);
-  setupDatabaseHandlers(timeLogService);
+  const mainProcessTimer = new MainProcessTimer(timeLogService);
+  
+  // Initialize system tray with timer
+  const systemTray = createSystemTrayModule({ 
+    windowManager, 
+    preloadPath: initConfig.preload.path,
+    rendererConfig: initConfig.renderer,
+    mainProcessTimer
+  });
+  await systemTray.enable({ app: (await import('electron')).app });
+
+  setupDatabaseHandlers(timeLogService, mainProcessTimer);
 }

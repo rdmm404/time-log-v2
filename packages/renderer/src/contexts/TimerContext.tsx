@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useReducer, useCallback, useRef } from 'react';
-import { timeLogAPI, mainWindowAPI, trayEvents, type TimeLog } from '@app/preload';
+import { timeLogAPI, trayAPI, mainWindowEvents, type TimeLog } from '@app/preload';
 
 export interface TimerState {
   isRunning: boolean;
@@ -146,26 +146,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  // Calculate elapsed time from start time
-  const calculateElapsedTime = useCallback((startTime: string): number => {
-    const start = new Date(startTime);
-    const now = new Date();
-    return Math.floor((now.getTime() - start.getTime()) / 1000);
-  }, []);
+  // No longer calculating elapsed time locally - main process handles this
 
-  // Start timer interval
-  const startTimerInterval = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    intervalRef.current = setInterval(() => {
-      if (state.currentSession && startTimeRef.current) {
-        const elapsedSeconds = calculateElapsedTime(state.currentSession.start_time);
-        dispatch({ type: 'UPDATE_ELAPSED_TIME', payload: { elapsedTime: elapsedSeconds } });
-      }
-    }, 1000);
-  }, [state.currentSession, calculateElapsedTime]);
+  // No longer managing timer intervals - main process handles timing
 
   // Stop timer interval
   const stopTimerInterval = useCallback(() => {
@@ -176,7 +159,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     startTimeRef.current = null;
   }, []);
 
-  // Start timer function
+  // Start timer function - delegates to main process
   const startTimer = useCallback(async (description?: string, projectId?: number) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true } });
@@ -185,19 +168,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const finalDescription = description || state.description || '';
       const finalProjectId = projectId !== undefined ? projectId : (state.projectId ?? undefined);
 
-      const session = await timeLogAPI.startTimer(finalDescription, finalProjectId);
-      
-      dispatch({ type: 'START_TIMER', payload: { session } });
-      startTimeRef.current = new Date(session.start_time);
-      startTimerInterval();
+      // Main process timer handles all logic - we just call the API
+      await timeLogAPI.startTimer(finalDescription, finalProjectId);
+      // State will be updated via the main process state change event
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to start timer';
       dispatch({ type: 'SET_ERROR', payload: { error: errorMessage } });
     }
-  }, [state.description, state.projectId, startTimerInterval]);
+  }, [state.description, state.projectId]);
 
-  // Stop timer function
+  // Stop timer function - delegates to main process
   const stopTimer = useCallback(async (description?: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true } });
@@ -205,16 +186,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const finalDescription = description !== undefined ? description : state.description;
       
+      // Main process timer handles all logic - we just call the API
       await timeLogAPI.stopTimer(finalDescription);
-      
-      stopTimerInterval();
-      dispatch({ type: 'STOP_TIMER' });
+      // State will be updated via the main process state change event
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to stop timer';
       dispatch({ type: 'SET_ERROR', payload: { error: errorMessage } });
     }
-  }, [state.description, stopTimerInterval]);
+  }, [state.description]);
 
   // Set description
   const setDescription = useCallback((description: string) => {
@@ -231,92 +211,58 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dispatch({ type: 'SET_ERROR', payload: { error: null } });
   }, []);
 
-  // Send timer state to tray - removed useCallback to avoid circular dependency
-  const sendTimerStateToTray = () => {
-    const timerState = {
-      isRunning: state.isRunning,
-      elapsedTime: state.elapsedTime,
-      description: state.description
-    };
-    mainWindowAPI.sendTimerStateToTray(timerState);
-  };
+  // No longer sending state to tray - main process is the source of truth
 
-  // Restore active session on app startup (persistent timer state)
+  // Main process handles session restoration - renderer just waits for state updates
+
+  // Listen to main process timer state changes
   useEffect(() => {
-    const restoreActiveSession = async () => {
-      try {
-        const activeSession = await timeLogAPI.getActiveTimer();
-        if (activeSession) {
-          const elapsedTime = calculateElapsedTime(activeSession.start_time);
+    // Listen for timer state changes from main process (sent via SystemTray to main window)
+    const unsubscribeMainWindow = mainWindowEvents.onTimerStateChanged((timerState: any) => {
+      // Always sync renderer state with main process state
+      if (timerState.isRunning) {
+        if (timerState.currentSession) {
           dispatch({ 
             type: 'RESTORE_SESSION', 
-            payload: { session: activeSession, elapsedTime } 
+            payload: { 
+              session: timerState.currentSession, 
+              elapsedTime: timerState.elapsedTime 
+            } 
           });
-          startTimeRef.current = new Date(activeSession.start_time);
-          startTimerInterval();
+          startTimeRef.current = new Date(timerState.currentSession.start_time);
         }
-      } catch (error) {
-        console.error('Failed to restore active session:', error);
-        // Don't show error to user for restoration failures
-      }
-    };
-
-    restoreActiveSession();
-  }, [calculateElapsedTime, startTimerInterval]);
-
-  // Setup tray communication
-  useEffect(() => {
-    // Set up handlers for tray timer actions
-    const unsubscribeStart = mainWindowAPI.onStartTimerFromTray(() => {
-      startTimer();
-    });
-
-    const unsubscribeStop = mainWindowAPI.onStopTimerFromTray(() => {
-      stopTimer();
-    });
-
-    // Listen for tray toggle events
-    const unsubscribeToggle = trayEvents.onToggleTimer(() => {
-      if (state.isRunning) {
-        stopTimer();
       } else {
-        startTimer();
+        // Timer is stopped
+        stopTimerInterval();
+        dispatch({ type: 'STOP_TIMER' });
       }
-    });
-
-    // Listen for tray requesting current state
-    const unsubscribeStateRequest = trayEvents.onRequestCurrentState(() => {
-      sendTimerStateToTray();
     });
 
     return () => {
-      unsubscribeStart();
-      unsubscribeStop();
-      unsubscribeToggle();
-      unsubscribeStateRequest();
+      unsubscribeMainWindow();
     };
-  }, [startTimer, stopTimer, state.isRunning]);
+  }, []);
 
-  // Send timer state updates to tray whenever relevant state changes
+  // Request current timer state from main process when component mounts
   useEffect(() => {
-    sendTimerStateToTray();
-  }, [state.isRunning, state.elapsedTime, state.description]);
+    // Request current state from main process
+    const timer = setTimeout(() => {
+      trayAPI.requestCurrentState();
+    }, 100); // Small delay to ensure IPC is ready
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // No longer sending state to tray - main process is the source of truth
 
   // Cleanup interval on unmount
   useEffect(() => {
     return () => {
       stopTimerInterval();
     };
-  }, [stopTimerInterval]);
+  }, []);
 
-  // Update timer interval when session changes
-  useEffect(() => {
-    if (state.isRunning && state.currentSession) {
-      startTimerInterval();
-    } else {
-      stopTimerInterval();
-    }
-  }, [state.isRunning, state.currentSession, startTimerInterval, stopTimerInterval]);
+  // No longer managing timer intervals - main process handles timing
 
   const contextValue: TimerContextType = {
     state,

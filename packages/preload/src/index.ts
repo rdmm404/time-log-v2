@@ -63,6 +63,7 @@ export const timeLogAPI = {
 export const trayAPI = {
   startTimer: (): Promise<void> => ipcRenderer.invoke('tray-start-timer'),
   stopTimer: (): Promise<void> => ipcRenderer.invoke('tray-stop-timer'),
+  requestCurrentState: (): void => ipcRenderer.send('tray-request-current-state'),
 };
 
 // System tray events
@@ -80,6 +81,14 @@ export const trayEvents = {
   onRequestCurrentState: (callback: () => void) => {
     ipcRenderer.on('tray-request-current-state', callback);
     return () => ipcRenderer.removeAllListeners('tray-request-current-state');
+  }
+};
+
+// Main window events for timer state
+export const mainWindowEvents = {
+  onTimerStateChanged: (callback: (timerState: any) => void) => {
+    ipcRenderer.on('timer-state-changed', (_, timerState) => callback(timerState));
+    return () => ipcRenderer.removeAllListeners('timer-state-changed');
   }
 };
 

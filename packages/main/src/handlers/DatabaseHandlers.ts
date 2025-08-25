@@ -1,12 +1,13 @@
 import {ipcMain} from 'electron';
 import type {TimeLogService} from '../services/TimeLogService.js';
+import type {MainProcessTimer} from '../services/MainProcessTimer.js';
 import type {TimeLog} from '../modules/DatabaseModule.js';
 
-export function setupDatabaseHandlers(timeLogService: TimeLogService) {
-  // Timer operations
+export function setupDatabaseHandlers(timeLogService: TimeLogService, mainProcessTimer: MainProcessTimer) {
+  // Timer operations - use MainProcessTimer instead of direct service calls
   ipcMain.handle('timer:start', async (_, description?: string, projectId?: number) => {
     try {
-      return await timeLogService.startTimer(description, projectId);
+      return await mainProcessTimer.startTimer(description, projectId);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to start timer');
     }
@@ -14,7 +15,7 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService) {
 
   ipcMain.handle('timer:stop', async (_, description?: string) => {
     try {
-      return await timeLogService.stopTimer(description);
+      return await mainProcessTimer.stopTimer(description);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to stop timer');
     }
@@ -22,7 +23,8 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService) {
 
   ipcMain.handle('timer:getActive', async () => {
     try {
-      return await timeLogService.getActiveTimeLog();
+      const state = mainProcessTimer.getState();
+      return state.currentSession;
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to get active timer');
     }

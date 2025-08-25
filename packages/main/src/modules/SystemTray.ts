@@ -4,11 +4,13 @@ import { Tray, Menu, BrowserWindow, nativeImage, ipcMain } from "electron";
 import * as path from "path";
 import { createWindowManagerModule } from "./WindowManager.js";
 import type { AppInitConfig } from "../AppInitConfig.js";
+import { MainProcessTimer } from "../services/MainProcessTimer.js";
 
 interface TrayWindowConfig {
   windowManager: ReturnType<typeof createWindowManagerModule>;
   preloadPath: string;
   rendererConfig: { path: string } | URL;
+  mainProcessTimer: MainProcessTimer;
 }
 
 class SystemTrayModule implements AppModule {
@@ -17,28 +19,25 @@ class SystemTrayModule implements AppModule {
   private windowManager: ReturnType<typeof createWindowManagerModule>;
   private preloadPath: string;
   private rendererConfig: { path: string } | URL;
-  private timerState = {
-    isRunning: false,
-    elapsedTime: 0,
-    description: "",
-  };
+  private mainProcessTimer: MainProcessTimer;
 
   constructor({
     windowManager,
     preloadPath,
     rendererConfig,
+    mainProcessTimer,
   }: TrayWindowConfig) {
     this.windowManager = windowManager;
     this.preloadPath = preloadPath;
     this.rendererConfig = rendererConfig;
+    this.mainProcessTimer = mainProcessTimer;
   }
 
   async enable({ app }: ModuleContext): Promise<void> {
     await app.whenReady();
     await this.createSystemTray();
     this.setupIpcListeners();
-    // Request current timer state from main window after setup
-    this.requestCurrentTimerState();
+    this.setupTimerListeners();
   }
 
   private async createSystemTray(): Promise<void> {
@@ -76,9 +75,10 @@ class SystemTrayModule implements AppModule {
   private createContextMenu(): void {
     if (!this.tray) return;
 
+    const timerState = this.mainProcessTimer.getState();
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: this.timerState.isRunning ? "Stop Timer" : "Start Timer",
+        label: timerState.isRunning ? "Stop Timer" : "Start Timer",
         click: () => {
           this.toggleTimer();
         },
@@ -172,7 +172,8 @@ class SystemTrayModule implements AppModule {
     // Send current timer state when window is ready
     this.trayWindow.webContents.once("did-finish-load", () => {
       if (this.trayWindow && !this.trayWindow.isDestroyed()) {
-        this.trayWindow.webContents.send("timer-state-update", this.timerState);
+        const timerState = this.mainProcessTimer.getState();
+        this.trayWindow.webContents.send("timer-state-update", timerState);
       }
     });
   }
@@ -195,30 +196,30 @@ class SystemTrayModule implements AppModule {
     this.trayWindow.focus();
 
     // Send current timer state when window becomes visible
-    this.trayWindow.webContents.send("timer-state-update", this.timerState);
+    const timerState = this.mainProcessTimer.getState();
+    this.trayWindow.webContents.send("timer-state-update", timerState);
   }
 
   private showMainWindow(): void {
     this.windowManager.restoreOrCreateWindow(true);
   }
 
-  private toggleTimer(): void {
-    // Send IPC message to main window to toggle timer
-    const mainWindow = BrowserWindow.getAllWindows().find(
-      (w) => !w.isDestroyed() && w !== this.trayWindow
-    );
-    if (mainWindow) {
-      mainWindow.webContents.send("tray-toggle-timer");
+  private async toggleTimer(): Promise<void> {
+    try {
+      await this.mainProcessTimer.toggleTimer();
+    } catch (error) {
+      console.error('Failed to toggle timer from tray:', error);
     }
   }
 
   private updateTrayTooltip(): void {
     if (!this.tray) return;
 
-    const status = this.timerState.isRunning ? "Running" : "Stopped";
-    const time = this.formatTime(this.timerState.elapsedTime);
-    const description = this.timerState.description
-      ? ` - ${this.timerState.description}`
+    const timerState = this.mainProcessTimer.getState();
+    const status = timerState.isRunning ? "Running" : "Stopped";
+    const time = this.formatTime(timerState.elapsedTime);
+    const description = timerState.description
+      ? ` - ${timerState.description}`
       : "";
 
     this.tray.setToolTip(
@@ -235,9 +236,10 @@ class SystemTrayModule implements AppModule {
         .createFromPath(iconPath)
         .resize({ width: 16, height: 16 });
 
+      const timerState = this.mainProcessTimer.getState();
       // If timer is running, we could modify the icon or add an overlay
       // For now, we'll use the same icon but this is where we'd change it
-      if (this.timerState.isRunning) {
+      if (timerState.isRunning) {
         // TODO Could add a green dot overlay or change the icon entirely
         // trayIcon = this.addRunningIndicator(trayIcon);
       }
@@ -258,10 +260,9 @@ class SystemTrayModule implements AppModule {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   }
 
-  private setupIpcListeners(): void {
-    // Listen for timer state updates from the main window
-    ipcMain.on("timer-state-changed", (event, timerState) => {
-      this.timerState = timerState;
+  private setupTimerListeners(): void {
+    // Listen for timer state changes from MainProcessTimer
+    this.mainProcessTimer.on('state-changed', (timerState) => {
       this.updateTrayTooltip();
       this.updateTrayIcon();
       this.createContextMenu(); // Recreate menu to update start/stop label
@@ -270,37 +271,64 @@ class SystemTrayModule implements AppModule {
       if (this.trayWindow && !this.trayWindow.isDestroyed()) {
         this.trayWindow.webContents.send("timer-state-update", timerState);
       }
-    });
 
-    // Handle tray window timer actions
-    ipcMain.handle("tray-start-timer", async () => {
+      // Update main window if it exists
       const mainWindow = BrowserWindow.getAllWindows().find(
         (w) => !w.isDestroyed() && w !== this.trayWindow
       );
       if (mainWindow) {
-        mainWindow.webContents.send("start-timer-from-tray");
+        mainWindow.webContents.send("timer-state-changed", timerState);
+      }
+    });
+  }
+
+  private setupIpcListeners(): void {
+    // Handle tray window timer actions
+    ipcMain.handle("tray-start-timer", async () => {
+      try {
+        return await this.mainProcessTimer.startTimer();
+      } catch (error) {
+        console.error('Failed to start timer from tray:', error);
+        throw error;
       }
     });
 
     ipcMain.handle("tray-stop-timer", async () => {
-      const mainWindow = BrowserWindow.getAllWindows().find(
-        (w) => !w.isDestroyed() && w !== this.trayWindow
-      );
-      if (mainWindow) {
-        mainWindow.webContents.send("stop-timer-from-tray");
+      try {
+        return await this.mainProcessTimer.stopTimer();
+      } catch (error) {
+        console.error('Failed to stop timer from tray:', error);
+        throw error;
+      }
+    });
+
+    // Handle state requests from renderer or other processes
+    ipcMain.on("timer-state-changed", (event, data) => {
+      // Check if this is a request for current state
+      if (data && data.request === 'current-state') {
+        const timerState = this.mainProcessTimer.getState();
+        // Send current state back to the requesting window
+        event.sender.send("timer-state-update", timerState);
+      }
+    });
+
+    // Handle renderer requesting current state
+    ipcMain.on("tray-request-current-state", (event) => {
+      const timerState = this.mainProcessTimer.getState();
+      
+      // Determine if request is from tray window or main window
+      const isFromTrayWindow = event.sender === this.trayWindow?.webContents;
+      
+      if (isFromTrayWindow) {
+        // Send to tray window
+        event.sender.send("timer-state-update", timerState);
+      } else {
+        // Send to main window
+        event.sender.send("timer-state-changed", timerState);
       }
     });
   }
 
-  private requestCurrentTimerState(): void {
-    // Request current timer state from main window
-    const mainWindow = BrowserWindow.getAllWindows().find(
-      (w) => !w.isDestroyed() && w !== this.trayWindow
-    );
-    if (mainWindow) {
-      mainWindow.webContents.send("tray-request-current-state");
-    }
-  }
 }
 
 export function createSystemTrayModule(config: TrayWindowConfig) {

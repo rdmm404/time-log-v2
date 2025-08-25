@@ -15,13 +15,19 @@ export const TrayWindow: React.FC = () => {
   });
 
   useEffect(() => {
-    // Listen for timer state updates from main window
+    // Listen for timer state updates from main process
     const unsubscribe = trayEvents.onTimerStateUpdate((state: TrayTimerState) => {
       setTimerState(state);
     });
 
+    // Request current state when component mounts
+    const timer = setTimeout(() => {
+      trayAPI.requestCurrentState();
+    }, 100);
+
     return () => {
       unsubscribe();
+      clearTimeout(timer);
     };
   }, []);
 
