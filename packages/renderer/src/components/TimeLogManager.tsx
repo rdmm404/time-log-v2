@@ -22,14 +22,20 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
   };
 
   // Format date and time for display
-  const formatDateTime = (dateStr: string): string => {
+  const formatDateTime = (dateStr: string, showSeconds = false): string => {
     const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    });
+    };
+
+    if (showSeconds) {
+      options.second = '2-digit';
+    }
+
+    return date.toLocaleString('en-US', options);
   };
 
   // Load recent time logs
@@ -118,13 +124,13 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                         {/* Time Range */}
                         <div className="flex items-center space-x-2">
                           <span className="text-sm text-slate-600 dark:text-slate-400">
-                            {formatDateTime(log.start_time)}
+                            {formatDateTime(log.start_time, log.duration !== null && log.duration < 60)}
                           </span>
                           {log.end_time && (
                             <>
                               <span className="text-slate-400">→</span>
                               <span className="text-sm text-slate-600 dark:text-slate-400">
-                                {formatDateTime(log.end_time)}
+                                {formatDateTime(log.end_time, log.duration !== null && log.duration < 60)}
                               </span>
                             </>
                           )}
