@@ -1,5 +1,5 @@
 import './App.css'
-import TimerApp from './components/TimerApp'
+import Dashboard from './components/Dashboard'
 import { TrayWindow } from './components/TrayWindow'
 import { TimerProvider } from './contexts/TimerContext'
 
@@ -18,9 +18,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-white dark:bg-slate-900">
-      <TimerApp />
-    </div>
+    <TimerProvider>
+      <Dashboard />
+    </TimerProvider>
   );
 }
 

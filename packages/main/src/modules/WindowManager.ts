@@ -72,7 +72,6 @@ class WindowManager implements AppModule {
     // Find main application windows (exclude tray windows and other utility windows)
     let window = BrowserWindow.getAllWindows().find(w => 
       !w.isDestroyed() && 
-      !w.skipTaskbar && // Main windows appear in taskbar
       w.isResizable() && // Main windows are resizable
       w.getBounds().width > 350 // Main windows are larger than tray windows
     );

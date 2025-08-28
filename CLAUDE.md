@@ -11,7 +11,7 @@ There are two important documents at the root of this project which you MUST rea
 - You should implement tasks as single units of work, and implement each task completely, abiding
 to the task steps as specified.
 - When taking on a new task, check previous commits for already completed tasks to familiarize yourself with the current state of the codebase.
-- Once you consider a task is done, you MUST come back to the user for review.
+- VERY IMPORTANT: Once you consider a task is done, you MUST come back to the user for review. DO NOT mark the task as completed until a review is done.
 - ONLY when your changes are approved, you should update the task status as done
 - Once a task is completed, create a commit containing all your changes with a meaningful message
 - The commit message must be in the following format: P<Phase #>T<Task #>: <commit message>
@@ -62,11 +62,6 @@ The project uses npm workspaces with packages organized under `packages/`:
 - Renderer can import from `@app/preload` via exposed context bridge
 - No direct Node.js API access in renderer for security
 
-### Communication Pattern
-
-```
-renderer (React) → preload (contextBridge) → main (Electron APIs)
-```
 
 ## Key Technologies
 
@@ -76,26 +71,6 @@ renderer (React) → preload (contextBridge) → main (Electron APIs)
 - **TailwindCSS 4.1.12** - Styling framework
 - **Vite** - Build tool and bundler
 - **Playwright** - E2E testing framework
-
-## Development Workflow
-
-### Adding New Features
-
-1. Determine which package the feature belongs to:
-
-   - UI components → `packages/renderer/src`
-   - Electron APIs/system integration → `packages/main/src`
-   - Data access/Node.js APIs → `packages/preload/src`
-
-2. Follow the existing module patterns in `packages/main/src/modules/` for new Electron functionality
-
-### Database Integration
-
-The app is designed for local SQLite storage. When implementing database features:
-
-- Add database logic to preload scripts
-- Expose database methods through context bridge
-- Import and use in renderer components
 
 ## Important Notes
 
