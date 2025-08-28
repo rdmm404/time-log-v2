@@ -1,15 +1,6 @@
 # Implementation Plan - Time Tracker Desktop App
 This is a breakdown in Phases and Tasks for the development of the current project.
 
-## Task Development
-- You should implement tasks as single units of work, and implement each task completely, abiding
-to the task steps as specified.
-- Once you consider a task is done, you MUST come back to the user for review.
-- ONLY when your changes are approved, you should update the task status as done
-- Once a task is completed, create a commit containing all your changes with a meaningful message
-- The commit message must be in the following format: P<Phase #>T<Task #>: <commit message>
-    - For example, if the task number 9 for phase 3 was just completed, the commit message should be something like this: "P5T3: Update renderer to handle modifying time entries"
-
 
 ## Phase 1: Core Infrastructure
 
@@ -56,29 +47,9 @@ Implement system tray functionality for quick timer access
 - ✅ Implement tray icon state changes (different icons for running/stopped)
 - ✅ Handle tray click events for quick actions
 
-### Task 5 - Sleep/Lock Detection
-Add automatic timer pausing when system is inactive
-**Status:** TODO
-**Steps:**
-- Implement system sleep event listeners in Electron main process
-- Add screen lock detection
-- Create timer auto-pause logic on sleep/lock
-- Add user notification when timer is auto-paused
-- Implement resume confirmation dialog on wake/unlock
-
-### Task 6 - Global Keyboard Shortcuts
-Set up configurable global hotkeys for timer control
-**Status:** TODO
-**Steps:**
-- Implement global shortcut registration in Electron
-- Create default keybind configuration (Ctrl+Shift+S for start/stop)
-- Add hotkey conflict detection and handling
-- Build settings UI for keybind customization
-- Add hotkey status feedback (visual/audio confirmation)
-
 ## Phase 3: Data Management
 
-### Task 7 - Time Log Persistence
+### Task 5 - Time Log Persistence
 Connect timer to database for automatic logging
 **Status:** TODO
 **Steps:**
@@ -88,7 +59,7 @@ Connect timer to database for automatic logging
 - Add error handling for database write failures
 - Implement session recovery on app crash/restart
 
-### Task 8 - Dashboard Implementation
+### Task 6 - Dashboard Implementation
 Build main dashboard with daily summary and controls
 **Status:** TODO
 **Steps:**
@@ -98,7 +69,7 @@ Build main dashboard with daily summary and controls
 - Build daily time breakdown visualization
 - Add responsive design for different window sizes
 
-### Task 9 - Time Log Editing System
+### Task 7 - Time Log Editing System
 Enable users to modify and correct time entries
 **Status:** TODO
 **Steps:**
@@ -110,7 +81,7 @@ Enable users to modify and correct time entries
 
 ## Phase 4: Core Features Completion
 
-### Task 10 - Basic Monthly Export
+### Task 8 - Basic Monthly Export
 Implement simple CSV/Excel export for monthly hours
 **Status:** TODO
 **Steps:**
@@ -120,7 +91,7 @@ Implement simple CSV/Excel export for monthly hours
 - Implement hours-per-day breakdown format
 - Add export progress feedback and success notifications
 
-### Task 11 - Settings and Configuration
+### Task 9 - Settings and Configuration
 Build settings panel for core app configuration
 **Status:** TODO
 **Steps:**
@@ -132,7 +103,7 @@ Build settings panel for core app configuration
 
 ## Phase 5: Secondary Features
 
-### Task 12 - Smart Reminder System
+### Task 10 - Smart Reminder System
 Implement configurable reminders for timer activation
 **Status:** TODO
 **Steps:**
@@ -142,7 +113,7 @@ Implement configurable reminders for timer activation
 - Build app-based trigger system
 - Create reminder dismissal and snooze options
 
-### Task 13 - Project Management
+### Task 11 - Project Management
 Add project organization for time tracking
 **Status:** TODO
 **Steps:**
@@ -152,7 +123,7 @@ Add project organization for time tracking
 - Add project assignment to time logs
 - Create project-based filtering and reporting
 
-### Task 14 - Advanced Time Visualization
+### Task 12 - Advanced Time Visualization
 Build comprehensive time log viewing capabilities
 **Status:** TODO
 **Steps:**
@@ -162,7 +133,7 @@ Build comprehensive time log viewing capabilities
 - Build historical trend displays
 - Create responsive visualization layouts
 
-### Task 15 - Advanced Export Features
+### Task 13 - Advanced Export Features
 Extend export capabilities with more options
 **Status:** TODO
 **Steps:**
@@ -172,7 +143,7 @@ Extend export capabilities with more options
 - Add export scheduling/automation options
 - Build export history tracking
 
-### Task 16 - Enhanced UI Polish
+### Task 14 - Enhanced UI Polish
 Final UI improvements and user experience enhancements
 **Status:** TODO
 **Steps:**
@@ -181,6 +152,27 @@ Final UI improvements and user experience enhancements
 - Create onboarding/help system
 - Implement accessibility improvements
 - Add advanced theming options
+
+### Task 15 - Sleep/Lock Detection
+Add automatic timer pausing when system is inactive
+**Status:** TODO
+**Steps:**
+- Implement system sleep event listeners in Electron main process
+- Add screen lock detection
+- Create timer auto-pause logic on sleep/lock
+- Add user notification when timer is auto-paused
+- Implement resume confirmation dialog on wake/unlock
+
+### Task 16 - Global Keyboard Shortcuts
+Set up configurable global hotkeys for timer control
+**Status:** TODO
+**Steps:**
+- Implement global shortcut registration in Electron
+- Create default keybind configuration (Ctrl+Shift+S for start/stop)
+- Add hotkey conflict detection and handling
+- Build settings UI for keybind customization
+- Add hotkey status feedback (visual/audio confirmation)
+
 
 ## Phase 6: Quality and Performance
 

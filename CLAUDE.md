@@ -7,6 +7,17 @@ There are two important documents at the root of this project which you MUST rea
 - PROJECT.md: Provides a comprehensive description of the project we're building
 - IMPLEMENTATION_PLAN.md: Provides a list of tasks that are either completed or pending
 
+## Task Development
+- You should implement tasks as single units of work, and implement each task completely, abiding
+to the task steps as specified.
+- When taking on a new task, check previous commits for already completed tasks to familiarize yourself with the current state of the codebase.
+- Once you consider a task is done, you MUST come back to the user for review.
+- ONLY when your changes are approved, you should update the task status as done
+- Once a task is completed, create a commit containing all your changes with a meaningful message
+- The commit message must be in the following format: P<Phase #>T<Task #>: <commit message>
+    - For example, if the task number 9 for phase 3 was just completed, the commit message should be something like this: "P5T3: Update renderer to handle modifying time entries"
+
+
 ## Development Commands
 
 ```bash
