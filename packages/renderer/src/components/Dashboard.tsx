@@ -139,22 +139,23 @@ const Dashboard: React.FC = () => {
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Timer Section - Takes up one column */}
-          <div className="lg:col-span-1">
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg">
+          {/* Timer Section - Takes up one column, spans both rows */}
+          <div className="lg:col-span-1 lg:row-span-2">
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full flex flex-col">
               <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">
                 Timer
               </h2>
-              <div className="flex justify-center">
-                <TimerApp />
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="flex justify-center">
+                  <TimerApp />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Section - Takes up two columns */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Today's Summary */}
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg">
+          {/* Today's Summary - Takes up two columns, first row */}
+          <div className="lg:col-span-2">
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full">
               <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
                 Today's Summary
               </h2>
@@ -174,9 +175,11 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Recent Days */}
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg">
+          {/* Recent Days - Takes up two columns, second row */}
+          <div className="lg:col-span-2">
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full">
               <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
                 Recent Days
               </h2>
