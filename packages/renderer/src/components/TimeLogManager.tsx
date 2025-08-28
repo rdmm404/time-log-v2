@@ -134,17 +134,6 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                               </span>
                             </>
                           )}
-                          <div className="ml-auto">
-                            {log.duration ? (
-                              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                {formatDuration(log.duration)}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-green-600 dark:text-green-400">
-                                Running...
-                              </span>
-                            )}
-                          </div>
                         </div>
 
                         {/* Description */}
@@ -157,8 +146,21 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                         </div>
                       </div>
 
+                      {/* Duration */}
+                      <div className="mx-4 text-right">
+                        {log.duration ? (
+                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {formatDuration(log.duration)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-green-600 dark:text-green-400">
+                            Running...
+                          </span>
+                        )}
+                      </div>
+
                       {/* Action Buttons */}
-                      <div className="ml-4 flex space-x-2">
+                      <div className="flex space-x-2">
                         <button
                           onClick={() => setEditingLog(log)}
                           className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors"
