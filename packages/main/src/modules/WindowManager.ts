@@ -68,6 +68,38 @@ class WindowManager implements AppModule {
     return window;
   }
 
+  async restoreOrCreateMainWindow(show = false) {
+    // Find main application windows (exclude tray windows and other utility windows)
+    let window = BrowserWindow.getAllWindows().find(w => 
+      !w.isDestroyed() && 
+      !w.skipTaskbar && // Main windows appear in taskbar
+      w.isResizable() && // Main windows are resizable
+      w.getBounds().width > 350 // Main windows are larger than tray windows
+    );
+
+    if (window === undefined) {
+      window = await this.createWindow();
+    }
+
+    if (!show) {
+      return window;
+    }
+
+    if (window.isMinimized()) {
+      window.restore();
+    }
+
+    window?.show();
+
+    if (this.#openDevTools) {
+      window?.webContents.openDevTools();
+    }
+
+    window.focus();
+
+    return window;
+  }
+
 }
 
 export function createWindowManagerModule(...args: ConstructorParameters<typeof WindowManager>) {

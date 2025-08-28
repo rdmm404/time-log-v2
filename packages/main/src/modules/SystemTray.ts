@@ -201,7 +201,7 @@ class SystemTrayModule implements AppModule {
   }
 
   private showMainWindow(): void {
-    this.windowManager.restoreOrCreateWindow(true);
+    this.windowManager.restoreOrCreateMainWindow(true);
   }
 
   private async toggleTimer(): Promise<void> {
