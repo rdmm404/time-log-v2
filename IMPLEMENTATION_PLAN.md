@@ -1,4 +1,15 @@
 # Implementation Plan - Time Tracker Desktop App
+This is a breakdown in Phases and Tasks for the development of the current project.
+
+## Task Development
+- You should implement tasks as single units of work, and implement each task completely, abiding
+to the task steps as specified.
+- Once you consider a task is done, you MUST come back to the user for review.
+- ONLY when your changes are approved, you should update the task status as done
+- Once a task is completed, create a commit containing all your changes with a meaningful message
+- The commit message must be in the following format: P<Phase #>T<Task #>: <commit message>
+    - For example, if the task number 9 for phase 3 was just completed, the commit message should be something like this: "P5T3: Update renderer to handle modifying time entries"
+
 
 ## Phase 1: Core Infrastructure
 

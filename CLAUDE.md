@@ -1,10 +1,11 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 This is a desktop time tracking application built with Electron, TypeScript, and React. The project is based on the secure Vite Electron Builder boilerplate and follows a monorepo architecture using npm workspaces. The application allows users to track work hours locally with no backend required, featuring a system tray widget, global shortcuts, and local SQLite storage.
+
+## Development Cycle
+There are two important documents at the root of this project which you MUST read:
+- PROJECT.md: Provides a comprehensive description of the project we're building
+- IMPLEMENTATION_PLAN.md: Provides a list of tasks that are either completed or pending
 
 ## Development Commands
 
