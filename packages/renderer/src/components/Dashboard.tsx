@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { timeLogAPI, type TimeLog } from '@app/preload';
 import TimerApp from './TimerApp';
-import TimeLogManager from './TimeLogManager';
 import { useTimer } from '../contexts/TimerContext';
 
 interface DashboardStats {
@@ -22,7 +21,6 @@ const Dashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showTimeLogManager, setShowTimeLogManager] = useState(false);
   const { state, formatElapsedTime } = useTimer();
 
   // Format duration from seconds to HH:MM:SS
@@ -138,15 +136,9 @@ const Dashboard: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">
             Time Tracker Dashboard
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
+          <p className="text-slate-600 dark:text-slate-400">
             Track your time efficiently and review your productivity
           </p>
-          <button
-            onClick={() => setShowTimeLogManager(true)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            Manage Time Logs
-          </button>
         </div>
 
         {/* Main Grid Layout */}
@@ -251,11 +243,6 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-        )}
-
-        {/* Time Log Manager Modal */}
-        {showTimeLogManager && (
-          <TimeLogManager onClose={() => setShowTimeLogManager(false)} />
         )}
       </div>
     </div>
