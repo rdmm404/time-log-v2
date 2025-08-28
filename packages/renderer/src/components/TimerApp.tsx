@@ -10,7 +10,7 @@ const TimerApp: React.FC = () => {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-xl transition-all duration-200">
+      <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-8 shadow-xl transition-all duration-200">
         <TimerStatus isRunning={state.isRunning} error={state.error} />
         <TimerDisplay elapsedTime={state.elapsedTime} isRunning={state.isRunning} />
         <TimerControls 

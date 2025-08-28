@@ -79,29 +79,29 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center p-6">
-        <div className="text-slate-600 dark:text-slate-400">Loading time logs...</div>
+      <div className="min-h-screen bg-background text-text flex items-center justify-center p-6">
+        <div className="text-text/70">Loading time logs...</div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="min-h-screen bg-white dark:bg-slate-900 p-6">
+      <div className="min-h-screen bg-background text-text p-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+            <h1 className="text-3xl font-bold text-text mb-2">
               Time Log Manager
             </h1>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-text/70">
               View, edit, and manage your time tracking history
             </p>
           </div>
 
           {/* Error Display */}
           {error && (
-            <div className="mb-6 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg">
+            <div className="mb-6 p-3 bg-error/20 text-error rounded-lg">
               {error}
             </div>
           )}
@@ -109,7 +109,7 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
           {/* Time Logs List */}
           <div>
             {timeLogs.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+              <div className="text-center py-12 text-text/60">
                 No time logs found
               </div>
             ) : (
@@ -117,19 +117,19 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                 {timeLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600"
+                    className="bg-foreground/20 rounded-lg p-4 border border-foreground/30"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 space-y-2">
                         {/* Time Range */}
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                          <span className="text-sm text-text/70">
                             {formatDateTime(log.start_time, log.duration !== null && log.duration < 60)}
                           </span>
                           {log.end_time && (
                             <>
-                              <span className="text-slate-400">→</span>
-                              <span className="text-sm text-slate-600 dark:text-slate-400">
+                              <span className="text-text/50">→</span>
+                              <span className="text-sm text-text/70">
                                 {formatDateTime(log.end_time, log.duration !== null && log.duration < 60)}
                               </span>
                             </>
@@ -137,9 +137,9 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                         </div>
 
                         {/* Description */}
-                        <div className="text-slate-800 dark:text-slate-200">
+                        <div className="text-text">
                           {log.description || (
-                            <span className="italic text-slate-500 dark:text-slate-400">
+                            <span className="italic text-text/60">
                               No description
                             </span>
                           )}
@@ -149,11 +149,11 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                       {/* Duration */}
                       <div className="mx-4 text-right">
                         {log.duration ? (
-                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                          <span className="text-sm font-medium text-primary">
                             {formatDuration(log.duration)}
                           </span>
                         ) : (
-                          <span className="text-sm text-green-600 dark:text-green-400">
+                          <span className="text-sm text-secondary">
                             Running...
                           </span>
                         )}
@@ -163,7 +163,7 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => setEditingLog(log)}
-                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors"
+                          className="px-3 py-1 bg-primary hover:bg-primary/80 text-background rounded text-sm transition-colors"
                         >
                           Edit
                         </button>
@@ -171,13 +171,13 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                           <div className="flex space-x-1">
                             <button
                               onClick={() => handleDelete(log.id!)}
-                              className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors"
+                              className="px-2 py-1 bg-error hover:bg-error/80 text-background rounded text-xs transition-colors"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setDeleteConfirming(null)}
-                              className="px-2 py-1 bg-slate-400 hover:bg-slate-500 text-white rounded text-xs transition-colors"
+                              className="px-2 py-1 bg-text/40 hover:bg-text/60 text-background rounded text-xs transition-colors"
                             >
                               Cancel
                             </button>
@@ -185,7 +185,7 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                         ) : (
                           <button
                             onClick={() => setDeleteConfirming(log.id!)}
-                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm transition-colors"
+                            className="px-3 py-1 bg-error hover:bg-error/80 text-background rounded text-sm transition-colors"
                           >
                             Delete
                           </button>

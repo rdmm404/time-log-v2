@@ -138,15 +138,15 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
-      <div className="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full m-4 max-h-[90vh] overflow-auto">
+      <div className="bg-background border border-foreground/30 rounded-lg max-w-md w-full m-4 max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
+        <div className="flex items-center justify-between p-6 border-b border-foreground/30">
+          <h3 className="text-xl font-semibold text-text">
             Edit Time Log
           </h3>
           <button
             onClick={onCancel}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl"
+            className="text-text/50 hover:text-text text-2xl"
           >
             ×
           </button>
@@ -156,14 +156,14 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
         <div className="p-6 space-y-4">
           {/* Error Display */}
           {error && (
-            <div className="p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg text-sm">
+            <div className="p-3 bg-error/20 text-error rounded-lg text-sm">
               {error}
             </div>
           )}
 
           {/* Start Time */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Start Time
             </label>
             <input
@@ -171,7 +171,7 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
               name="start_time"
               value={formData.start_time}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg 
+              className="w-full px-3 py-2 border border-foreground/30 rounded-lg 
                          bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -179,7 +179,7 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
 
           {/* End Time */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               End Time
             </label>
             <input
@@ -187,22 +187,22 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
               name="end_time"
               value={formData.end_time}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg 
+              className="w-full px-3 py-2 border border-foreground/30 rounded-lg 
                          bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Duration Preview */}
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Duration: <span className="font-medium text-blue-600 dark:text-blue-400">
+          <div className="text-sm text-text/70">
+            Duration: <span className="font-medium text-primary">
               {calculateDuration()}
             </span>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Description
             </label>
             <textarea
@@ -211,7 +211,7 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
               onChange={handleInputChange}
               placeholder="Optional description..."
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg 
+              className="w-full px-3 py-2 border border-foreground/30 rounded-lg 
                          bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200
                          focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -222,7 +222,7 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 
+              className="flex-1 px-4 py-2 bg-primary hover:bg-primary/80 disabled:bg-primary/40 
                          text-white rounded-lg transition-colors"
             >
               {loading ? 'Saving...' : 'Save Changes'}
@@ -230,7 +230,7 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
             <button
               onClick={onCancel}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-slate-400 hover:bg-slate-500 disabled:bg-slate-300 
+              className="flex-1 px-4 py-2 bg-text/40 hover:bg-text/60 disabled:bg-text/20 
                          text-white rounded-lg transition-colors"
             >
               Cancel

@@ -78,6 +78,18 @@ Enable users to modify and correct time entries
 - ✅ Add description/notes editing functionality
 - ✅ Create delete confirmation system
 
+### Task 7.5 - Color palette improvement
+Update the color palette of the project to use the following colors
+**Status:** COMPLETED
+**Steps:**
+- ✅ Text color: #00120B
+- ✅ Background: #FFFBDB
+- ✅ Foreground: #F2BCD9
+- ✅ Error/Warning: #F6511D
+- ✅ Primary: #7A8450
+- ✅ Secondary: #734B5E
+- ✅ Make sure to use tailwind's @theme directive as specified on Tailwind v4
+
 ## Phase 4: Core Features Completion
 
 ### Task 8 - Basic Monthly Export

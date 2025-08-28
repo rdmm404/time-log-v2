@@ -110,16 +110,16 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-white dark:bg-slate-900">
-        <div className="text-slate-600 dark:text-slate-400">Loading dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center p-8 bg-background text-text">
+        <div className="text-text/70">Loading dashboard...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-white dark:bg-slate-900">
-        <div className="text-red-500">Error: {error}</div>
+      <div className="min-h-screen flex items-center justify-center p-8 bg-background text-text">
+        <div className="text-error">Error: {error}</div>
       </div>
     );
   }
@@ -129,14 +129,14 @@ const Dashboard: React.FC = () => {
   const totalTodayDuration = stats.todayDuration + currentSessionTime;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 p-6">
+    <div className="min-h-screen bg-background text-text p-6">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+          <h1 className="text-3xl font-bold text-text mb-2">
             Time Tracker Dashboard
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-text/70">
             Track your time efficiently and review your productivity
           </p>
         </div>
@@ -145,8 +145,8 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Timer Section - Takes up one column, spans both rows */}
           <div className="md:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-w-[350px]">
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full flex flex-col min-w-0">
-              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">
+            <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg h-full flex flex-col min-w-0">
+              <h2 className="text-xl font-semibold text-text mb-4 text-center">
                 Timer
               </h2>
               <div className="flex-1 flex flex-col justify-center">
@@ -159,20 +159,20 @@ const Dashboard: React.FC = () => {
 
           {/* Today's Summary - Takes up two columns, first row */}
           <div className="md:col-span-2 lg:col-span-2 min-w-0">
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full min-w-0">
-              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
+            <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg h-full min-w-0">
+              <h2 className="text-xl font-semibold text-text mb-4">
                 Today's Summary
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Time</div>
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="bg-background/80 rounded-lg p-4 border border-foreground/20">
+                  <div className="text-sm text-text/70 mb-1">Total Time</div>
+                  <div className="text-2xl font-bold text-primary">
                     {formatDuration(totalTodayDuration)}
                   </div>
                 </div>
-                <div className="bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Sessions</div>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="bg-background/80 rounded-lg p-4 border border-foreground/20">
+                  <div className="text-sm text-text/70 mb-1">Sessions</div>
+                  <div className="text-2xl font-bold text-secondary">
                     {stats.todayLogs.filter(log => log.end_time).length}
                     {state.isRunning ? ` + 1 active` : ''}
                   </div>
@@ -183,20 +183,20 @@ const Dashboard: React.FC = () => {
 
           {/* Recent Days - Takes up two columns, second row */}
           <div className="md:col-span-2 lg:col-span-2 min-w-0">
-            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg h-full min-w-0">
-              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
+            <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg h-full min-w-0">
+              <h2 className="text-xl font-semibold text-text mb-4">
                 Recent Days
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {stats.recentDays.map((day) => (
                   <div 
                     key={day.date}
-                    className="bg-white dark:bg-slate-700 rounded-lg p-3 border border-slate-200 dark:border-slate-600 text-center"
+                    className="bg-background/80 rounded-lg p-3 border border-foreground/20 text-center"
                   >
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                    <div className="text-xs text-text/70 mb-1">
                       {day.formattedDate}
                     </div>
-                    <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <div className="text-sm font-semibold text-text">
                       {day.duration > 0 ? formatDuration(day.duration) : '0h 0m'}
                     </div>
                   </div>
@@ -208,18 +208,18 @@ const Dashboard: React.FC = () => {
 
         {/* Today's Time Logs */}
         {stats.todayLogs.length > 0 && (
-          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg">
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
+          <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg">
+            <h2 className="text-xl font-semibold text-text mb-4">
               Today's Time Logs
             </h2>
             <div className="space-y-3">
               {stats.todayLogs.map((log) => (
                 <div 
                   key={log.id}
-                  className="bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600 flex items-center justify-between"
+                  className="bg-background/80 rounded-lg p-4 border border-foreground/20 flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <div className="text-sm text-text/70">
                       {new Date(log.start_time).toLocaleTimeString('en-US', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -229,11 +229,11 @@ const Dashboard: React.FC = () => {
                         minute: '2-digit' 
                       })}`}
                     </div>
-                    <div className="text-slate-800 dark:text-slate-200">
+                    <div className="text-text">
                       {log.description || 'No description'}
                     </div>
                   </div>
-                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <div className="text-sm font-medium text-text/70">
                     {log.end_time && log.duration ? formatDuration(log.duration) : (
                       state.isRunning && state.currentSession?.id === log.id ? 
                       formatElapsedTime(state.elapsedTime) : 'Running...'

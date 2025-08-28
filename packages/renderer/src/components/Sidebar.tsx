@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   ];
 
   return (
-    <div className="fixed left-0 top-0 h-full w-16 bg-slate-800 dark:bg-slate-900 border-r border-slate-700 dark:border-slate-600 flex flex-col items-center py-4 z-40">
+    <div className="fixed left-0 top-0 h-full w-16 bg-secondary border-r border-secondary/60 flex flex-col items-center py-4 z-40">
       <div className="space-y-4">
         {navItems.map((item) => (
           <button
@@ -37,8 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
             className={`
               w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200
               ${currentView === item.id 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-800'
+                ? 'bg-primary text-background shadow-lg' 
+                : 'text-background/70 hover:text-background hover:bg-secondary/80'
               }
             `}
             title={item.label}
