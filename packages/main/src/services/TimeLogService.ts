@@ -123,7 +123,7 @@ export class TimeLogService {
     const stmt = this.db.prepare(`
       SELECT * FROM time_logs 
       WHERE DATE(start_time) >= DATE(?) AND DATE(start_time) <= DATE(?)
-      ORDER BY start_time ASC
+      ORDER BY start_time DESC
     `);
     return stmt.all(startDate, endDate) as TimeLog[];
   }
