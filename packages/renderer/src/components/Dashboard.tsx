@@ -52,9 +52,11 @@ const Dashboard: React.FC = () => {
   };
 
   // Fetch dashboard data
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (skipLoadingState = false) => {
     try {
-      setLoading(true);
+      if (!skipLoadingState) {
+        setLoading(true);
+      }
       setError(null);
 
       // Get today's data
@@ -88,7 +90,9 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
     } finally {
-      setLoading(false);
+      if (!skipLoadingState) {
+        setLoading(false);
+      }
     }
   };
 
@@ -100,7 +104,7 @@ const Dashboard: React.FC = () => {
   // Refresh data when timer stops (to update today's total)
   useEffect(() => {
     if (!state.isRunning && !state.currentSession) {
-      fetchDashboardData();
+      fetchDashboardData(true); // Skip loading state to prevent re-render
     }
   }, [state.isRunning, state.currentSession]);
 
