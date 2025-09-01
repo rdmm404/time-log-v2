@@ -98,8 +98,33 @@ export class ExportService {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
-    // Get all time logs for the month
-    const query = `
+    // Use SQL aggregation query for accurate project breakdown
+    const projectQuery = `
+      SELECT
+        COALESCE(p.name, 'No Project') AS project,
+        COALESCE(p.description, '') AS project_description,
+        ROUND(
+          SUM((JULIANDAY(tl.end_time) - JULIANDAY(tl.start_time)) * 24.0),
+          2
+        ) AS hours,
+        STRFTIME('%Y-%m', tl.start_time) AS month
+      FROM time_logs AS tl
+      LEFT JOIN projects AS p ON p.id = tl.project_id
+      WHERE tl.end_time IS NOT NULL
+      AND DATE(tl.start_time) >= ? AND DATE(tl.start_time) <= ?
+      GROUP BY
+        p.id,
+        p.name,
+        p.description,
+        CAST(STRFTIME('%m', tl.start_time) AS INTEGER)
+      ORDER BY p.name, month
+    `;
+
+    const projectStmt = this.db.prepare(projectQuery);
+    const projectBreakdowns = projectStmt.all(startDateStr, endDateStr) as ProjectBreakdown[];
+
+    // Get individual logs for allLogs (for potential future use)
+    const logsQuery = `
       SELECT 
         tl.*,
         p.name as project_name,
@@ -112,8 +137,8 @@ export class ExportService {
       ORDER BY tl.start_time
     `;
 
-    const stmt = this.db.prepare(query);
-    const logs = stmt.all(startDateStr, endDateStr) as Array<TimeLog & { 
+    const logsStmt = this.db.prepare(logsQuery);
+    const logs = logsStmt.all(startDateStr, endDateStr) as Array<TimeLog & { 
       project_name: string | null; 
       project_description: string | null; 
       date: string 
@@ -127,41 +152,9 @@ export class ExportService {
       duration_formatted: this.formatDuration(log.duration!)
     }));
 
-    // Group by project for breakdown
-    const projectTotals: { [key: string]: { hours: number, description: string } } = {};
-    
-    logs.forEach(log => {
-      const projectName = log.project_name || 'No Project';
-      const projectDesc = log.project_description || 'No description';
-      const durationMs = log.duration || 0;
-      
-      // Debug: log the duration values
-      console.log(`Log duration for ${projectName}: ${durationMs}ms (${durationMs / 1000} seconds)`);
-      
-      if (!projectTotals[projectName]) {
-        projectTotals[projectName] = { hours: 0, description: projectDesc };
-      }
-      projectTotals[projectName].hours += durationMs;
-    });
-
-    // Convert to project breakdowns (convert milliseconds to hours with more precision)
-    const projectBreakdowns: ProjectBreakdown[] = Object.entries(projectTotals).map(([projectName, data]) => {
-      const hoursValue = Math.round((data.hours / (1000 * 60 * 60)) * 10000) / 10000;
-      console.log(`${projectName}: ${data.hours}ms -> ${hoursValue} hours`);
-      
-      return {
-        project: projectName,
-        project_description: data.description,
-        hours: hoursValue, // Convert ms to hours, round to 4 decimals
-        month: month
-      };
-    });
-
-    // Sort by hours descending
-    projectBreakdowns.sort((a, b) => b.hours - a.hours);
-
-    // Calculate total hours
-    const totalDuration = logs.reduce((sum, log) => sum + (log.duration || 0), 0);
+    // Calculate total hours from project breakdowns
+    const totalHours = projectBreakdowns.reduce((sum, project) => sum + project.hours, 0);
+    const totalDuration = totalHours * 60 * 60 * 1000; // Convert back to ms for formatDuration
 
     return {
       month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }),
