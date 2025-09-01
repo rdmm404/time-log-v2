@@ -6,13 +6,20 @@ interface DropdownOption<T = string | number> {
 }
 
 interface CustomDropdownProps<T = string | number> {
-  value: T;
-  onChange: (value: T) => void;
+  value: T | null;
+  onChange: (value: T | null) => void;
   options: DropdownOption<T>[];
   label?: string;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  // Custom render functions
+  renderSelected?: (option: DropdownOption<T> | null) => React.ReactNode;
+  renderOption?: (option: DropdownOption<T>, isSelected: boolean) => React.ReactNode;
+  // Additional options for complex dropdowns
+  allowClear?: boolean;
+  clearLabel?: string;
+  emptyMessage?: string;
 }
 
 function CustomDropdown<T = string | number>({
@@ -22,14 +29,19 @@ function CustomDropdown<T = string | number>({
   label,
   placeholder = "Select...",
   className = "",
-  disabled = false
+  disabled = false,
+  renderSelected,
+  renderOption,
+  allowClear = false,
+  clearLabel = "No selection",
+  emptyMessage = "No options available"
 }: CustomDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedOption = options.find(option => option.value === value);
   const displayValue = selectedOption ? selectedOption.label : placeholder;
 
-  const handleSelect = (optionValue: T) => {
+  const handleSelect = (optionValue: T | null) => {
     onChange(optionValue);
     setIsOpen(false);
   };
@@ -59,7 +71,13 @@ function CustomDropdown<T = string | number>({
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-foreground/50'}
         `}
       >
-        <span className={selectedOption ? '' : 'text-text/50'}>{displayValue}</span>
+        <div className="flex-1 min-w-0">
+          {renderSelected ? (
+            renderSelected(selectedOption)
+          ) : (
+            <span className={selectedOption ? '' : 'text-text/50'}>{displayValue}</span>
+          )}
+        </div>
         <svg 
           className={`w-4 h-4 text-text/50 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" 
@@ -72,19 +90,38 @@ function CustomDropdown<T = string | number>({
 
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-foreground/20 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-          {options.map((option) => (
+          {allowClear && (
             <button
-              key={String(option.value)}
               type="button"
-              onClick={() => handleSelect(option.value)}
-              className={`
-                w-full px-3 py-2 text-left hover:bg-foreground/10
-                ${value === option.value ? 'bg-foreground/20' : ''}
-              `}
+              onClick={() => handleSelect(null)}
+              className="w-full px-3 py-2 text-left hover:bg-foreground/10 text-text/70 text-sm border-b border-foreground/10"
             >
-              {option.label}
+              <span className="italic">{clearLabel}</span>
             </button>
-          ))}
+          )}
+          
+          {options.length === 0 ? (
+            <div className="px-3 py-2 text-text/50 text-sm">
+              {emptyMessage}
+            </div>
+          ) : (
+            options.map((option) => {
+              const isSelected = value === option.value;
+              return (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className={`
+                    w-full px-3 py-2 text-left hover:bg-foreground/10
+                    ${isSelected ? 'bg-foreground/20' : ''}
+                  `}
+                >
+                  {renderOption ? renderOption(option, isSelected) : option.label}
+                </button>
+              );
+            })
+          )}
         </div>
       )}
 

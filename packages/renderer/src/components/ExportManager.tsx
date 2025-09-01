@@ -147,21 +147,21 @@ const ExportManager: React.FC = () => {
             <CustomDropdown
               label="Year"
               value={exportOptions.year}
-              onChange={(year) => setExportOptions(prev => ({ ...prev, year }))}
+              onChange={(year) => year && setExportOptions(prev => ({ ...prev, year }))}
               options={yearOptions}
             />
 
             <CustomDropdown
               label="Month"
               value={exportOptions.month}
-              onChange={(month) => setExportOptions(prev => ({ ...prev, month }))}
+              onChange={(month) => month && setExportOptions(prev => ({ ...prev, month }))}
               options={monthOptions}
             />
 
             <CustomDropdown
               label="Format"
               value={exportOptions.format}
-              onChange={(format) => setExportOptions(prev => ({ ...prev, format }))}
+              onChange={(format) => format && setExportOptions(prev => ({ ...prev, format }))}
               options={formatOptions}
             />
           </div>
