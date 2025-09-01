@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { timeLogAPI, projectAPI, type TimeLog, type Project } from '@app/preload';
 import TimerApp from './TimerApp';
 import { useTimer } from '../contexts/TimerContext';
+import { useProject } from '../contexts/ProjectContext';
 
 interface DashboardStats {
   todayDuration: number;
@@ -23,6 +24,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { state, formatElapsedTime } = useTimer();
+  const { loadProjects, loadMostRecentProject } = useProject();
 
   // Format duration from seconds to HH:MM:SS
   const formatDuration = (seconds: number): string => {
@@ -44,10 +46,10 @@ const Dashboard: React.FC = () => {
     } else if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
       });
     }
   };
@@ -76,17 +78,17 @@ const Dashboard: React.FC = () => {
       // Get past 6 days data (excluding today)
       const recentDays = [];
       const today = new Date();
-      
+
       for (let i = 1; i <= 6; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        
+        const dateStr = date.toISOString().split("T")[0];
+
         const duration = await timeLogAPI.getDateDuration(dateStr);
         recentDays.push({
           date: dateStr,
           duration,
-          formattedDate: formatDate(dateStr)
+          formattedDate: formatDate(dateStr),
         });
       }
 
@@ -105,9 +107,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Refresh data when timer state changes
+  // Refresh data when dashboard loads and ensure projects are up to date
   useEffect(() => {
-    fetchDashboardData();
+    const refreshData = async () => {
+      // Refresh project data in context to ensure latest projects are available
+      await loadProjects();
+      await loadMostRecentProject();
+
+      // Then fetch dashboard data
+      fetchDashboardData();
+    };
+
+    refreshData();
   }, []);
 
   // Refresh data when timer stops (to update today's total)
@@ -182,8 +193,8 @@ const Dashboard: React.FC = () => {
                 <div className="bg-background/80 rounded-lg p-4 border border-foreground/20">
                   <div className="text-sm text-text/70 mb-1">Sessions</div>
                   <div className="text-2xl font-bold text-secondary">
-                    {stats.todayLogs.filter(log => log.end_time).length}
-                    {state.isRunning ? ` + 1 active` : ''}
+                    {stats.todayLogs.filter((log) => log.end_time).length}
+                    {state.isRunning ? ` + 1 active` : ""}
                   </div>
                 </div>
               </div>
@@ -198,7 +209,7 @@ const Dashboard: React.FC = () => {
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {stats.recentDays.map((day) => (
-                  <div 
+                  <div
                     key={day.date}
                     className="bg-background/80 rounded-lg p-3 border border-foreground/20 text-center"
                   >
@@ -206,7 +217,9 @@ const Dashboard: React.FC = () => {
                       {day.formattedDate}
                     </div>
                     <div className="text-sm font-semibold text-text">
-                      {day.duration > 0 ? formatDuration(day.duration) : '0h 0m'}
+                      {day.duration > 0
+                        ? formatDuration(day.duration)
+                        : "0h 0m"}
                     </div>
                   </div>
                 ))}
@@ -223,7 +236,7 @@ const Dashboard: React.FC = () => {
             </h2>
             <div className="space-y-3">
               {stats.todayLogs.map((log) => (
-                <div 
+                <div
                   key={log.id}
                   className="bg-background/80 rounded-lg p-4 border border-foreground/20"
                 >
@@ -238,31 +251,44 @@ const Dashboard: React.FC = () => {
                               const project = getProjectById(log.project_id);
                               return project ? (
                                 <>
-                                  <div 
+                                  <div
                                     className="w-3 h-3 rounded-full border border-white/20"
                                     style={{ backgroundColor: project.color }}
                                   />
-                                  <span className="text-sm font-medium text-text">{project.name}</span>
+                                  <span className="text-sm font-medium text-text">
+                                    {project.name}
+                                  </span>
                                 </>
                               ) : (
-                                <span className="text-sm text-text/50 italic">Unknown project</span>
+                                <span className="text-sm text-text/50 italic">
+                                  Unknown project
+                                </span>
                               );
                             })()}
                           </div>
                         ) : (
-                          <span className="text-sm text-text/60 italic">No project</span>
+                          <span className="text-sm text-text/60 italic">
+                            No project
+                          </span>
                         )}
-                        
+
                         {/* Time Range */}
                         <span className="text-sm text-text/70">
-                          {new Date(log.start_time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                          {log.end_time && ` - ${new Date(log.end_time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}`}
+                          {new Date(log.start_time).toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                          {log.end_time &&
+                            ` - ${new Date(log.end_time).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}`}
                         </span>
                       </div>
 
@@ -284,8 +310,10 @@ const Dashboard: React.FC = () => {
                         </span>
                       ) : (
                         <span className="text-sm text-secondary">
-                          {state.isRunning && state.currentSession?.id === log.id ? 
-                          formatElapsedTime(state.elapsedTime) : 'Running...'}
+                          {state.isRunning &&
+                          state.currentSession?.id === log.id
+                            ? formatElapsedTime(state.elapsedTime)
+                            : "Running..."}
                         </span>
                       )}
                     </div>
