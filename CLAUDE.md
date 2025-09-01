@@ -8,6 +8,8 @@ There are two important documents at the root of this project which you MUST rea
 - IMPLEMENTATION_PLAN.md: Provides a list of tasks that are either completed or pending
 
 ## Task Development
+You must follow these instructions every single time you execute a task:
+
 - You should implement tasks as single units of work, and implement each task completely, abiding
 to the task steps as specified.
 - When taking on a new task, check previous commits for already completed tasks to familiarize yourself with the current state of the codebase.

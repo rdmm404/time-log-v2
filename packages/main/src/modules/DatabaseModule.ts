@@ -15,6 +15,15 @@ export interface TimeLog {
   updated_at: string; // ISO string
 }
 
+export interface Project {
+  id?: number;
+  name: string;
+  description: string;
+  color: string;
+  created_at: string; // ISO string
+  updated_at: string; // ISO string
+}
+
 export class DatabaseModule implements AppModule {
   private db: Database.Database | null = null;
 

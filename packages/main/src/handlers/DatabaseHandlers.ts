@@ -1,9 +1,10 @@
 import {ipcMain} from 'electron';
 import type {TimeLogService} from '../services/TimeLogService.js';
+import type {ProjectService} from '../services/ProjectService.js';
 import type {MainProcessTimer} from '../services/MainProcessTimer.js';
-import type {TimeLog} from '../modules/DatabaseModule.js';
+import type {TimeLog, Project} from '../modules/DatabaseModule.js';
 
-export function setupDatabaseHandlers(timeLogService: TimeLogService, mainProcessTimer: MainProcessTimer) {
+export function setupDatabaseHandlers(timeLogService: TimeLogService, projectService: ProjectService, mainProcessTimer: MainProcessTimer) {
   // Timer operations - use MainProcessTimer instead of direct service calls
   ipcMain.handle('timer:start', async (_, description?: string, projectId?: number) => {
     try {
@@ -116,6 +117,63 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, mainProces
       return await timeLogService.getRecentTimeLogs(limit);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to get recent time logs');
+    }
+  });
+
+  // Project CRUD operations
+  ipcMain.handle('project:create', async (_, project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      // Check if project name already exists
+      if (projectService.isProjectNameExists(project.name)) {
+        throw new Error('A project with this name already exists');
+      }
+      return await projectService.createProject(project);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to create project');
+    }
+  });
+
+  ipcMain.handle('project:update', async (_, id: number, updates: Partial<Project>) => {
+    try {
+      // Check if project name already exists (excluding current project)
+      if (updates.name && projectService.isProjectNameExists(updates.name, id)) {
+        throw new Error('A project with this name already exists');
+      }
+      return await projectService.updateProject(id, updates);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to update project');
+    }
+  });
+
+  ipcMain.handle('project:delete', async (_, id: number) => {
+    try {
+      return await projectService.deleteProject(id);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete project');
+    }
+  });
+
+  ipcMain.handle('project:getById', async (_, id: number) => {
+    try {
+      return await projectService.getProjectById(id);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to get project');
+    }
+  });
+
+  ipcMain.handle('project:getAll', async () => {
+    try {
+      return await projectService.getAllProjects();
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to get projects');
+    }
+  });
+
+  ipcMain.handle('project:getAllWithStats', async () => {
+    try {
+      return await projectService.getProjectsWithStats();
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to get projects with stats');
     }
   });
 }

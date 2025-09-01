@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { timeLogAPI, type TimeLog } from '@app/preload';
+import { timeLogAPI, projectAPI, type TimeLog, type Project } from '@app/preload';
 import TimeLogEditModal from './TimeLogEditModal';
 
-interface TimeLogManagerProps {
-  onClose?: () => void;
-}
-
-const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
+const TimeLogManager: React.FC = () => {
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingLog, setEditingLog] = useState<TimeLog | null>(null);
@@ -38,18 +35,28 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
     return date.toLocaleString('en-US', options);
   };
 
-  // Load recent time logs
+  // Load recent time logs and projects
   const loadTimeLogs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const logs = await timeLogAPI.getRecentTimeLogs(50); // Get last 50 entries
+      const [logs, projectsData] = await Promise.all([
+        timeLogAPI.getRecentTimeLogs(50), // Get last 50 entries
+        projectAPI.getAllProjects()
+      ]);
       setTimeLogs(logs);
+      setProjects(projectsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load time logs');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to get project by ID
+  const getProjectById = (projectId: number | null): Project | null => {
+    if (!projectId) return null;
+    return projects.find(p => p.id === projectId) || null;
   };
 
   // Handle delete
@@ -144,6 +151,26 @@ const TimeLogManager: React.FC<TimeLogManagerProps> = ({ onClose }) => {
                             </span>
                           )}
                         </div>
+
+                        {/* Project */}
+                        {log.project_id && (
+                          <div className="flex items-center space-x-2">
+                            {(() => {
+                              const project = getProjectById(log.project_id);
+                              return project ? (
+                                <>
+                                  <div 
+                                    className="w-3 h-3 rounded-full border border-white/20"
+                                    style={{ backgroundColor: project.color }}
+                                  />
+                                  <span className="text-sm text-text/70">{project.name}</span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-text/50 italic">Unknown project</span>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </div>
 
                       {/* Duration */}

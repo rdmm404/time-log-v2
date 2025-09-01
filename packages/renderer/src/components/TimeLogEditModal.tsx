@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { timeLogAPI, type TimeLog } from '@app/preload';
+import { timeLogAPI, projectAPI, type TimeLog, type Project } from '@app/preload';
+import ProjectSelector from './ProjectSelector';
 
 interface TimeLogEditModalProps {
   timeLog: TimeLog;
@@ -11,19 +12,37 @@ interface FormData {
   start_time: string;
   end_time: string;
   description: string;
+  project_id: number | null;
 }
 
 const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, onCancel }) => {
   const [formData, setFormData] = useState<FormData>({
     start_time: '',
     end_time: '',
-    description: timeLog.description || ''
+    description: timeLog.description || '',
+    project_id: timeLog.project_id || null
   });
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize form data
+  // Initialize form data and load projects
   useEffect(() => {
+    const initializeData = async () => {
+      // Load projects and set selected project if timeLog has one
+      try {
+        const projectsData = await projectAPI.getAllProjects();
+        
+        // Set selected project if timeLog has one
+        if (timeLog.project_id) {
+          const selectedProj = projectsData.find(p => p.id === timeLog.project_id);
+          setSelectedProject(selectedProj || null);
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      }
+    };
+
     const startDate = new Date(timeLog.start_time);
     const endDate = timeLog.end_time ? new Date(timeLog.end_time) : new Date();
 
@@ -40,8 +59,11 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
     setFormData({
       start_time: formatForInput(startDate),
       end_time: timeLog.end_time ? formatForInput(endDate) : formatForInput(new Date()),
-      description: timeLog.description || ''
+      description: timeLog.description || '',
+      project_id: timeLog.project_id || null
     });
+
+    initializeData();
   }, [timeLog]);
 
   // Handle input changes
@@ -97,7 +119,8 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
         start_time: startTime,
         end_time: endTime,
         duration,
-        description: formData.description.trim()
+        description: formData.description.trim(),
+        project_id: selectedProject?.id || null
       };
 
       const updatedLog = await timeLogAPI.updateTimeLog(timeLog.id!, updates);
@@ -214,6 +237,19 @@ const TimeLogEditModal: React.FC<TimeLogEditModalProps> = ({ timeLog, onSave, on
               className="w-full px-3 py-2 border border-foreground/30 rounded-lg 
                          bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200
                          focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          {/* Project */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">
+              Project
+            </label>
+            <ProjectSelector
+              value={selectedProject}
+              onChange={setSelectedProject}
+              placeholder="No project selected"
+              disabled={loading}
             />
           </div>
 

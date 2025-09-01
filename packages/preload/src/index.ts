@@ -18,6 +18,15 @@ export interface TimeLog {
   updated_at: string;
 }
 
+export interface Project {
+  id?: number;
+  name: string;
+  description: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const timeLogAPI = {
   // Timer operations
   startTimer: (description?: string, projectId?: number): Promise<TimeLog> =>
@@ -57,6 +66,28 @@ export const timeLogAPI = {
 
   getRecentTimeLogs: (limit?: number): Promise<TimeLog[]> =>
     ipcRenderer.invoke('timelog:getRecent', limit),
+};
+
+// Project API for renderer
+export const projectAPI = {
+  // CRUD operations
+  createProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project> =>
+    ipcRenderer.invoke('project:create', project),
+
+  updateProject: (id: number, updates: Partial<Project>): Promise<Project | null> =>
+    ipcRenderer.invoke('project:update', id, updates),
+
+  deleteProject: (id: number): Promise<boolean> =>
+    ipcRenderer.invoke('project:delete', id),
+
+  getProjectById: (id: number): Promise<Project | null> =>
+    ipcRenderer.invoke('project:getById', id),
+
+  getAllProjects: (): Promise<Project[]> =>
+    ipcRenderer.invoke('project:getAll'),
+
+  getAllProjectsWithStats: (): Promise<Array<Project & {totalDuration: number, timeLogCount: number}>> =>
+    ipcRenderer.invoke('project:getAllWithStats'),
 };
 
 // System tray API

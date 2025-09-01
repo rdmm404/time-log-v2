@@ -92,7 +92,16 @@ Update the color palette of the project to use the following colors
 
 ## Phase 4: Core Features Completion
 
-### Task 8 - Basic Monthly Export
+### Task 8 - Project Management
+Add project organization for time tracking
+**Status:** TODO
+**Steps:**
+- Create projects database table and CRUD operations
+- Build project management UI (create/edit/delete)
+- Implement active project selection
+- Add project assignment to time logs
+
+### Task 9 - Basic Monthly Export
 Implement simple CSV/Excel export for monthly hours
 **Status:** TODO
 **Steps:**
@@ -101,8 +110,9 @@ Implement simple CSV/Excel export for monthly hours
 - Add Excel export capability (.xlsx format)
 - Implement hours-per-day breakdown format
 - Add export progress feedback and success notifications
+- Create project-based filtering and reporting
 
-### Task 9 - Settings and Configuration
+### Task 10 - Settings and Configuration
 Build settings panel for core app configuration
 **Status:** TODO
 **Steps:**
@@ -114,7 +124,7 @@ Build settings panel for core app configuration
 
 ## Phase 5: Secondary Features
 
-### Task 10 - Smart Reminder System
+### Task 11 - Smart Reminder System
 Implement configurable reminders for timer activation
 **Status:** TODO
 **Steps:**
@@ -123,16 +133,6 @@ Implement configurable reminders for timer activation
 - Add periodic reminder notifications
 - Build app-based trigger system
 - Create reminder dismissal and snooze options
-
-### Task 11 - Project Management
-Add project organization for time tracking
-**Status:** TODO
-**Steps:**
-- Create projects database table and CRUD operations
-- Build project management UI (create/edit/delete)
-- Implement active project selection
-- Add project assignment to time logs
-- Create project-based filtering and reporting
 
 ### Task 12 - Advanced Time Visualization
 Build comprehensive time log viewing capabilities

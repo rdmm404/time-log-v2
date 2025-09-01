@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useTimerActions } from '../hooks/useTimerActions';
+import { useProject } from '../contexts/ProjectContext';
+import ProjectSelector from './ProjectSelector';
+import type { Project } from '@app/preload';
 
 interface TimerControlsProps {
   isRunning: boolean;
@@ -15,12 +18,15 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   onDescriptionChange
 }) => {
   const { startTimer, stopTimer, setDescription } = useTimerActions();
+  const { activeProject } = useProject();
   const [error, setError] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const handleStart = async () => {
     try {
       setError(null);
-      await startTimer(description);
+      const projectToUse = selectedProject || activeProject;
+      await startTimer(description, projectToUse?.id);
       setDescription(description);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start timer');
@@ -42,7 +48,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="w-full">
+      <div className="w-full space-y-4">
         <input
           type="text"
           value={description}
@@ -56,6 +62,19 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                    transition-all duration-200 outline-none"
           disabled={isLoading}
         />
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-text/80">
+            Project (optional)
+          </label>
+          <ProjectSelector
+            value={selectedProject}
+            onChange={setSelectedProject}
+            placeholder="Select project or use default..."
+            disabled={isLoading || isRunning}
+            showActiveProject={true}
+          />
+        </div>
       </div>
       
       <div className="flex gap-4 justify-center">
