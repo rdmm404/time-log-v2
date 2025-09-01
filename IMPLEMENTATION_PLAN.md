@@ -111,6 +111,8 @@ Some general improvements and fixes to the Projects feature
 - Add project information to "Todays Logs" similar to what is displayed in "Time Log Manager" 
 - Fix project dropdown in home page. Right now when "No project" is selected it is overriden by
 the most recent project. this shouldn't be the case.
+- When a new project is created, the project selection dropdown does not show the new project.
+- Fix layout for time logs in "Today's Time Logs" and "Time Log Manager". the project should be at the top left, horizontal to the times. So it should be something like "Project 5    03:53 PM - 03:54 PM".
 
 
 ### Task 9 - Basic Monthly Export

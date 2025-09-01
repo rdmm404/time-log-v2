@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { timeLogAPI, type TimeLog } from '@app/preload';
+import { timeLogAPI, projectAPI, type TimeLog, type Project } from '@app/preload';
 import TimerApp from './TimerApp';
 import { useTimer } from '../contexts/TimerContext';
 
@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
     todayLogs: [],
     recentDays: []
   });
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { state, formatElapsedTime } = useTimer();
@@ -51,6 +52,12 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Helper function to get project by ID
+  const getProjectById = (projectId: number | null): Project | null => {
+    if (!projectId) return null;
+    return projects.find(p => p.id === projectId) || null;
+  };
+
   // Fetch dashboard data
   const fetchDashboardData = async (skipLoadingState = false) => {
     try {
@@ -59,10 +66,11 @@ const Dashboard: React.FC = () => {
       }
       setError(null);
 
-      // Get today's data
-      const [todayDuration, todayLogs] = await Promise.all([
+      // Get today's data and projects
+      const [todayDuration, todayLogs, projectsData] = await Promise.all([
         timeLogAPI.getTodaysDuration(),
-        timeLogAPI.getTodaysTimeLogs()
+        timeLogAPI.getTodaysTimeLogs(),
+        projectAPI.getAllProjects()
       ]);
 
       // Get past 6 days data (excluding today)
@@ -87,6 +95,7 @@ const Dashboard: React.FC = () => {
         todayLogs,
         recentDays
       });
+      setProjects(projectsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
     } finally {
@@ -216,28 +225,67 @@ const Dashboard: React.FC = () => {
               {stats.todayLogs.map((log) => (
                 <div 
                   key={log.id}
-                  className="bg-background/80 rounded-lg p-4 border border-foreground/20 flex items-center justify-between"
+                  className="bg-background/80 rounded-lg p-4 border border-foreground/20"
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm text-text/70">
-                      {new Date(log.start_time).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                      {log.end_time && ` - ${new Date(log.end_time).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}`}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 space-y-2">
+                      {/* Time Range */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-text/70">
+                          {new Date(log.start_time).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                          {log.end_time && ` - ${new Date(log.end_time).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}`}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <div className="text-text">
+                        {log.description || (
+                          <span className="italic text-text/60">
+                            No description
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Project */}
+                      {log.project_id && (
+                        <div className="flex items-center space-x-2">
+                          {(() => {
+                            const project = getProjectById(log.project_id);
+                            return project ? (
+                              <>
+                                <div 
+                                  className="w-3 h-3 rounded-full border border-white/20"
+                                  style={{ backgroundColor: project.color }}
+                                />
+                                <span className="text-sm text-text/70">{project.name}</span>
+                              </>
+                            ) : (
+                              <span className="text-sm text-text/50 italic">Unknown project</span>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-text">
-                      {log.description || 'No description'}
+
+                    {/* Duration */}
+                    <div className="mx-4 text-right">
+                      {log.end_time && log.duration ? (
+                        <span className="text-sm font-medium text-primary">
+                          {formatDuration(log.duration)}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-secondary">
+                          {state.isRunning && state.currentSession?.id === log.id ? 
+                          formatElapsedTime(state.elapsedTime) : 'Running...'}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-sm font-medium text-text/70">
-                    {log.end_time && log.duration ? formatDuration(log.duration) : (
-                      state.isRunning && state.currentSession?.id === log.id ? 
-                      formatElapsedTime(state.elapsedTime) : 'Running...'
-                    )}
                   </div>
                 </div>
               ))}

@@ -117,16 +117,26 @@ export class ProjectService {
     return stmt.all() as Array<Project & {totalDuration: number, timeLogCount: number}>;
   }
 
-  // Get the most recently used project from time logs
+  // Get the most recently used project from time logs (including null/no project)
   getMostRecentlyUsedProject(): Project | null {
-    const stmt = this.db.prepare(`
-      SELECT p.* FROM projects p
-      INNER JOIN time_logs tl ON p.id = tl.project_id
-      WHERE tl.project_id IS NOT NULL
-      ORDER BY tl.start_time DESC
+    // First get the most recent time log's project_id (could be null)
+    const recentLogStmt = this.db.prepare(`
+      SELECT project_id FROM time_logs
+      ORDER BY start_time DESC
       LIMIT 1
     `);
     
-    return stmt.get() as Project | null;
+    const recentLog = recentLogStmt.get() as {project_id: number | null} | undefined;
+    
+    if (!recentLog) {
+      return null; // No time logs exist
+    }
+    
+    if (recentLog.project_id === null) {
+      return null; // Most recent was "No project"
+    }
+    
+    // Get the actual project details
+    return this.getProjectById(recentLog.project_id);
   }
 }

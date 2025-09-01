@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTimerActions } from '../hooks/useTimerActions';
 import { useProject } from '../contexts/ProjectContext';
 import ProjectSelector from './ProjectSelector';
+import { ProjectEditModal } from './ProjectEditModal';
 import type { Project } from '@app/preload';
 
 interface TimerControlsProps {
@@ -21,11 +22,15 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   const { activeProject, mostRecentProject, loadMostRecentProject } = useProject();
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
+  const [hasUserSelectedProject, setHasUserSelectedProject] = useState(false);
 
-  // Reset selected project to MRU when MRU changes (on mount or after timer starts)
+  // Reset selected project to MRU when MRU changes (including null for "No project")
   useEffect(() => {
-    setSelectedProject(mostRecentProject);
-  }, [mostRecentProject]);
+    if (!hasUserSelectedProject) {
+      setSelectedProject(mostRecentProject);
+    }
+  }, [mostRecentProject, hasUserSelectedProject]);
 
   const handleStart = async () => {
     try {
@@ -45,6 +50,12 @@ const TimerControls: React.FC<TimerControlsProps> = ({
     try {
       setError(null);
       await stopTimer(description);
+      
+      // Reset user selection flag after stopping, so next timer will use MRU
+      setHasUserSelectedProject(false);
+      
+      // Reload MRU project since the most recent time log has changed
+      await loadMostRecentProject();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to stop timer');
     }
@@ -52,6 +63,23 @@ const TimerControls: React.FC<TimerControlsProps> = ({
 
   const handleDescriptionChange = (value: string) => {
     onDescriptionChange(value);
+  };
+
+  const handleCreateProject = () => {
+    setIsCreateProjectModalOpen(true);
+  };
+
+  const handleProjectModalClose = async (projectSaved: boolean) => {
+    setIsCreateProjectModalOpen(false);
+    if (projectSaved) {
+      // Reload projects to reflect the new project
+      await loadMostRecentProject();
+    }
+  };
+
+  const handleProjectChange = (project: Project | null) => {
+    setSelectedProject(project);
+    setHasUserSelectedProject(true);
   };
 
   return (
@@ -75,13 +103,30 @@ const TimerControls: React.FC<TimerControlsProps> = ({
           <label className="block text-sm font-medium text-text/80">
             Project (optional)
           </label>
-          <ProjectSelector
-            value={selectedProject}
-            onChange={setSelectedProject}
-            placeholder="Select project or use default..."
-            disabled={isLoading || isRunning}
-            showActiveProject={true}
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <ProjectSelector
+                value={selectedProject}
+                onChange={handleProjectChange}
+                placeholder="Select project or use default..."
+                disabled={isLoading || isRunning}
+                showActiveProject={true}
+              />
+            </div>
+            <button
+              onClick={handleCreateProject}
+              disabled={isLoading || isRunning}
+              className="px-3 py-2 bg-secondary hover:bg-secondary/80 text-background rounded-lg 
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-secondary
+                       transition-colors duration-200 flex items-center justify-center
+                       focus:outline-none focus:ring-2 focus:ring-secondary/50"
+              title="Create new project"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
       
@@ -125,6 +170,14 @@ const TimerControls: React.FC<TimerControlsProps> = ({
                       animate-pulse">
           {error}
         </div>
+      )}
+
+      {/* Create Project Modal */}
+      {isCreateProjectModalOpen && (
+        <ProjectEditModal
+          project={null}
+          onClose={handleProjectModalClose}
+        />
       )}
     </div>
   );

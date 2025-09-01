@@ -74,7 +74,7 @@ const ProjectManager: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-background text-text p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text">Projects</h1>
         <button

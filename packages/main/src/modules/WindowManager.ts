@@ -24,6 +24,8 @@ class WindowManager implements AppModule {
   async createWindow(): Promise<BrowserWindow> {
     const browserWindow = new BrowserWindow({
       show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
+      width: 1280,
+      height: 720,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -70,10 +72,11 @@ class WindowManager implements AppModule {
 
   async restoreOrCreateMainWindow(show = false) {
     // Find main application windows (exclude tray windows and other utility windows)
-    let window = BrowserWindow.getAllWindows().find(w => 
-      !w.isDestroyed() && 
-      w.isResizable() && // Main windows are resizable
-      w.getBounds().width > 350 // Main windows are larger than tray windows
+    let window = BrowserWindow.getAllWindows().find(
+      (w) =>
+        !w.isDestroyed() &&
+        w.isResizable() && // Main windows are resizable
+        w.getBounds().width > 350 // Main windows are larger than tray windows
     );
 
     if (window === undefined) {
