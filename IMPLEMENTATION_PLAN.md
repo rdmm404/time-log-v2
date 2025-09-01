@@ -101,6 +101,18 @@ Add project organization for time tracking
 - Implement active project selection
 - Add project assignment to time logs
 
+### Task 8.5 - Project Improvements
+Some general improvements and fixes to the Projects feature
+**Status:** TODO
+**Steps:**
+- Fix background color in "Projects" page to match the rest
+- Add a "quick add" functionality to the homepage right next to the project dropdown
+    - this could be a button that opens up the same modal for creating a new project
+- Add project information to "Todays Logs" similar to what is displayed in "Time Log Manager" 
+- Fix project dropdown in home page. Right now when "No project" is selected it is overriden by
+the most recent project. this shouldn't be the case.
+
+
 ### Task 9 - Basic Monthly Export
 Implement simple CSV/Excel export for monthly hours
 **Status:** TODO

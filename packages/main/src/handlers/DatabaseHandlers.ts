@@ -176,4 +176,12 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, projectSer
       throw new Error(error instanceof Error ? error.message : 'Failed to get projects with stats');
     }
   });
+
+  ipcMain.handle('project:getMostRecentlyUsed', async () => {
+    try {
+      return await projectService.getMostRecentlyUsedProject();
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to get most recently used project');
+    }
+  });
 }

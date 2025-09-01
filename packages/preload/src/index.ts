@@ -88,6 +88,9 @@ export const projectAPI = {
 
   getAllProjectsWithStats: (): Promise<Array<Project & {totalDuration: number, timeLogCount: number}>> =>
     ipcRenderer.invoke('project:getAllWithStats'),
+
+  getMostRecentlyUsedProject: (): Promise<Project | null> =>
+    ipcRenderer.invoke('project:getMostRecentlyUsed'),
 };
 
 // System tray API

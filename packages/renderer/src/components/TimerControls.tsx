@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTimerActions } from '../hooks/useTimerActions';
 import { useProject } from '../contexts/ProjectContext';
 import ProjectSelector from './ProjectSelector';
@@ -18,9 +18,14 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   onDescriptionChange
 }) => {
   const { startTimer, stopTimer, setDescription } = useTimerActions();
-  const { activeProject } = useProject();
+  const { activeProject, mostRecentProject, loadMostRecentProject } = useProject();
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  // Reset selected project to MRU when MRU changes (on mount or after timer starts)
+  useEffect(() => {
+    setSelectedProject(mostRecentProject);
+  }, [mostRecentProject]);
 
   const handleStart = async () => {
     try {
@@ -28,6 +33,9 @@ const TimerControls: React.FC<TimerControlsProps> = ({
       const projectToUse = selectedProject || activeProject;
       await startTimer(description, projectToUse?.id);
       setDescription(description);
+      
+      // Reload MRU project from database since we just created a new time log
+      await loadMostRecentProject();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start timer');
     }

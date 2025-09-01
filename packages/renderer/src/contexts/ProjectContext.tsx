@@ -4,6 +4,8 @@ import { projectAPI, type Project } from '@app/preload';
 interface ProjectContextValue {
   activeProject: Project | null;
   setActiveProject: (project: Project | null) => void;
+  mostRecentProject: Project | null;
+  loadMostRecentProject: () => Promise<void>;
   projects: Project[];
   loadProjects: () => Promise<void>;
   loading: boolean;
@@ -19,6 +21,7 @@ const ACTIVE_PROJECT_KEY = 'timetracker_active_project_id';
 
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
   const [activeProject, setActiveProjectState] = useState<Project | null>(null);
+  const [mostRecentProject, setMostRecentProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +51,17 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   };
 
+  // Load most recently used project from database
+  const loadMostRecentProject = async () => {
+    try {
+      const mruProject = await projectAPI.getMostRecentlyUsedProject();
+      setMostRecentProject(mruProject);
+    } catch (error) {
+      console.error('Failed to load most recent project:', error);
+      setMostRecentProject(null);
+    }
+  };
+
   // Set active project and persist to localStorage
   const setActiveProject = (project: Project | null) => {
     setActiveProjectState(project);
@@ -58,14 +72,17 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   };
 
-  // Load projects on mount
+  // Load projects and MRU project on mount
   useEffect(() => {
     loadProjects();
+    loadMostRecentProject();
   }, []);
 
   const value: ProjectContextValue = {
     activeProject,
     setActiveProject,
+    mostRecentProject,
+    loadMostRecentProject,
     projects,
     loadProjects,
     loading

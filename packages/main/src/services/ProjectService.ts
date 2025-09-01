@@ -116,4 +116,17 @@ export class ProjectService {
     
     return stmt.all() as Array<Project & {totalDuration: number, timeLogCount: number}>;
   }
+
+  // Get the most recently used project from time logs
+  getMostRecentlyUsedProject(): Project | null {
+    const stmt = this.db.prepare(`
+      SELECT p.* FROM projects p
+      INNER JOIN time_logs tl ON p.id = tl.project_id
+      WHERE tl.project_id IS NOT NULL
+      ORDER BY tl.start_time DESC
+      LIMIT 1
+    `);
+    
+    return stmt.get() as Project | null;
+  }
 }
