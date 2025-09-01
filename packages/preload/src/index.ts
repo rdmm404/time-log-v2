@@ -93,6 +93,19 @@ export const projectAPI = {
     ipcRenderer.invoke('project:getMostRecentlyUsed'),
 };
 
+export interface ExportOptions {
+  year: number;
+  month: number;
+  projectId: number | null;
+  format: 'csv' | 'xlsx';
+}
+
+// Export API for renderer
+export const exportAPI = {
+  exportMonthlyData: (options: ExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> =>
+    ipcRenderer.invoke('export:monthly', options),
+};
+
 // System tray API
 export const trayAPI = {
   startTimer: (): Promise<void> => ipcRenderer.invoke('tray-start-timer'),

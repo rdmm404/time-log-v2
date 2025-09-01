@@ -2,6 +2,7 @@ import './App.css'
 import Dashboard from './components/Dashboard'
 import TimeLogManager from './components/TimeLogManager'
 import ProjectManager from './components/ProjectManager'
+import ExportManager from './components/ExportManager'
 import Sidebar from './components/Sidebar'
 import { TrayWindow } from './components/TrayWindow'
 import { TimerProvider } from './contexts/TimerContext'
@@ -11,7 +12,7 @@ import { useState } from 'react'
 function App() {
   // Check if this is the tray window based on the hash
   const isTrayWindow = window.location.hash === '#/tray';
-  const [currentView, setCurrentView] = useState<'dashboard' | 'time-logs' | 'projects'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'time-logs' | 'projects' | 'export'>('dashboard');
 
   if (isTrayWindow) {
     return (
@@ -33,6 +34,8 @@ function App() {
         return <TimeLogManager />;
       case 'projects':
         return <ProjectManager />;
+      case 'export':
+        return <ExportManager />;
       default:
         return <Dashboard />;
     }

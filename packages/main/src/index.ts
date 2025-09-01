@@ -11,6 +11,7 @@ import {createDatabaseModule} from './modules/DatabaseModule.js';
 import {createSystemTrayModule} from './modules/SystemTray.js';
 import {TimeLogService} from './services/TimeLogService.js';
 import {ProjectService} from './services/ProjectService.js';
+import {ExportService} from './services/ExportService.js';
 import {MainProcessTimer} from './services/MainProcessTimer.js';
 import {setupDatabaseHandlers} from './handlers/DatabaseHandlers.js';
 
@@ -59,6 +60,7 @@ export async function initApp(initConfig: AppInitConfig) {
   const database = databaseModule.getDatabase();
   const timeLogService = new TimeLogService(database);
   const projectService = new ProjectService(database);
+  const exportService = new ExportService(database);
   const mainProcessTimer = new MainProcessTimer(timeLogService);
   
   // Initialize system tray with timer
@@ -70,5 +72,5 @@ export async function initApp(initConfig: AppInitConfig) {
   });
   await systemTray.enable({ app: (await import('electron')).app });
 
-  setupDatabaseHandlers(timeLogService, projectService, mainProcessTimer);
+  setupDatabaseHandlers(timeLogService, projectService, exportService, mainProcessTimer);
 }

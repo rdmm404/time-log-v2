@@ -15,11 +15,13 @@
     "@app/preload": "*",
     "@app/renderer": "*",
     "better-sqlite3": "^12.2.0",
-    "electron-updater": "6.6.2"
+    "electron-updater": "6.6.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@app/electron-versions": "*",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/xlsx": "^0.0.35",
     "electron-devtools-installer": "4.0.0",
     "typescript": "5.9.2",
     "vite": "7.1.2"

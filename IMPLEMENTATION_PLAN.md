@@ -121,10 +121,12 @@ Implement simple CSV/Excel export for monthly hours
 **Steps:**
 - Create month selector UI component
 - Build CSV export functionality with monthly data
-- Add Excel export capability (.xlsx format)
+- Add Excel export capability (.xlsx format). IMPORTANT: on the process side, not client
+- UI should render current export status
 - Implement hours-per-day breakdown format
 - Add export progress feedback and success notifications
 - Create project-based filtering and reporting
+- Add monthly breakdown per-project report export
 
 ### Task 10 - Settings and Configuration
 Build settings panel for core app configuration

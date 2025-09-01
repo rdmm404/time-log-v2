@@ -102,3 +102,5 @@ export const useProject = (): ProjectContextValue => {
   }
   return context;
 };
+
+export { ProjectContext };

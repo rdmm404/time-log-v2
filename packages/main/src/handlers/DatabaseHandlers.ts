@@ -1,10 +1,12 @@
 import {ipcMain} from 'electron';
 import type {TimeLogService} from '../services/TimeLogService.js';
 import type {ProjectService} from '../services/ProjectService.js';
+import type {ExportService} from '../services/ExportService.js';
 import type {MainProcessTimer} from '../services/MainProcessTimer.js';
 import type {TimeLog, Project} from '../modules/DatabaseModule.js';
+import type {ExportOptions} from '../services/ExportService.js';
 
-export function setupDatabaseHandlers(timeLogService: TimeLogService, projectService: ProjectService, mainProcessTimer: MainProcessTimer) {
+export function setupDatabaseHandlers(timeLogService: TimeLogService, projectService: ProjectService, exportService: ExportService, mainProcessTimer: MainProcessTimer) {
   // Timer operations - use MainProcessTimer instead of direct service calls
   ipcMain.handle('timer:start', async (_, description?: string, projectId?: number) => {
     try {
@@ -182,6 +184,15 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, projectSer
       return await projectService.getMostRecentlyUsedProject();
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to get most recently used project');
+    }
+  });
+
+  // Export operations
+  ipcMain.handle('export:monthly', async (_, options: ExportOptions) => {
+    try {
+      return await exportService.exportMonthlyData(options);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to export data');
     }
   });
 }
