@@ -96,7 +96,6 @@ export const projectAPI = {
 export interface ExportOptions {
   year: number;
   month: number;
-  projectId: number | null;
   format: 'csv' | 'xlsx';
 }
 

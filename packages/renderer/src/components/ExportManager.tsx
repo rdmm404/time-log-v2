@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useProject } from '../contexts/ProjectContext';
 
 // Access the export API via the global window object
 declare global {
@@ -21,7 +20,6 @@ const getExportAPI = () => {
 interface ExportOptions {
   year: number;
   month: number;
-  projectId: number | null;
   format: 'csv' | 'xlsx';
 }
 
@@ -33,13 +31,11 @@ interface ExportStatus {
 }
 
 const ExportManager: React.FC = () => {
-  const { projects } = useProject();
   const currentDate = new Date();
   
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
     year: currentDate.getFullYear(),
     month: currentDate.getMonth() + 1, // JavaScript months are 0-indexed
-    projectId: null,
     format: 'csv'
   });
 
@@ -125,24 +121,19 @@ const ExportManager: React.FC = () => {
     return months[exportOptions.month - 1];
   };
 
-  const getSelectedProjectName = () => {
-    if (exportOptions.projectId === null) return 'All Projects';
-    const project = projects.find((p: any) => p.id === exportOptions.projectId);
-    return project?.name || 'Unknown Project';
-  };
 
   return (
     <div className="p-6 bg-background min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text mb-2">Export Time Logs</h1>
-          <p className="text-text/70">Export your time tracking data for the selected month and project.</p>
+          <p className="text-text/70">Export a monthly breakdown of hours per project for the selected month.</p>
         </div>
 
         <div className="bg-foreground rounded-xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-semibold text-text mb-4">Export Options</h2>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {/* Year Selector */}
             <div>
               <label htmlFor="year" className="block text-sm font-medium text-text mb-2">
@@ -177,26 +168,6 @@ const ExportManager: React.FC = () => {
               </select>
             </div>
 
-            {/* Project Selector */}
-            <div>
-              <label htmlFor="project" className="block text-sm font-medium text-text mb-2">
-                Project
-              </label>
-              <select
-                id="project"
-                value={exportOptions.projectId || ''}
-                onChange={(e) => setExportOptions(prev => ({ 
-                  ...prev, 
-                  projectId: e.target.value ? parseInt(e.target.value) : null 
-                }))}
-                className="w-full px-3 py-2 border border-secondary/30 rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">All Projects</option>
-                {projects.map((project: any) => (
-                  <option key={project.id} value={project.id}>{project.name}</option>
-                ))}
-              </select>
-            </div>
 
             {/* Format Selector */}
             <div>
@@ -222,8 +193,7 @@ const ExportManager: React.FC = () => {
           <div className="bg-background rounded-lg p-4 mb-4">
             <h3 className="font-medium text-text mb-2">Export Summary</h3>
             <p className="text-text/70 text-sm">
-              Exporting {getSelectedMonthName()} {exportOptions.year} data for{' '}
-              <span className="font-medium">{getSelectedProjectName()}</span> as{' '}
+              Exporting {getSelectedMonthName()} {exportOptions.year} data with hours breakdown per project as{' '}
               <span className="font-medium uppercase">{exportOptions.format}</span> format.
             </p>
           </div>
@@ -287,7 +257,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">CSV Format:</span> Includes columns for date, start time, end time, duration, description, and project name.
+                <span className="font-medium">CSV Format:</span> Includes columns for project, project_description, hours, and month - showing total hours per project.
               </p>
             </div>
             <div className="flex items-start">
@@ -295,7 +265,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">Excel Format:</span> Includes formatted spreadsheet with summary statistics and daily breakdowns.
+                <span className="font-medium">Excel Format:</span> Includes a Project Breakdown sheet with the main data and a Summary sheet with overview statistics.
               </p>
             </div>
             <div className="flex items-start">
@@ -303,7 +273,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">Project Filtering:</span> Select "All Projects" to include all time logs, or choose a specific project to filter results.
+                <span className="font-medium">Project Summary:</span> Hours are calculated as the total time logged for each project during the selected month, sorted by hours descending.
               </p>
             </div>
           </div>

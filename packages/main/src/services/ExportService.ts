@@ -8,7 +8,6 @@ import type {TimeLog, Project} from '../modules/DatabaseModule.js';
 export interface ExportOptions {
   year: number;
   month: number;
-  projectId: number | null;
   format: 'csv' | 'xlsx';
 }
 
@@ -27,13 +26,19 @@ export interface DailyBreakdown {
   logs: ExportedTimeLog[];
 }
 
+export interface ProjectBreakdown {
+  project: string;
+  project_description: string;
+  hours: number;
+  month: number;
+}
+
 export interface ExportData {
   month: string;
   year: number;
-  project: string;
   totalHours: number;
   totalFormatted: string;
-  dailyBreakdowns: DailyBreakdown[];
+  projectBreakdowns: ProjectBreakdown[];
   allLogs: ExportedTimeLog[];
 }
 
@@ -50,7 +55,7 @@ export class ExportService {
       }
 
       // Generate filename and ask user where to save
-      const defaultFileName = this.generateFileName(options, exportData.project);
+      const defaultFileName = this.generateFileName(options);
       
       const result = await dialog.showSaveDialog({
         title: 'Save Export File',
@@ -84,7 +89,7 @@ export class ExportService {
   }
 
   private async getMonthlyData(options: ExportOptions): Promise<ExportData> {
-    const { year, month, projectId } = options;
+    const { year, month } = options;
     
     // Calculate date range for the month
     const startDate = new Date(year, month - 1, 1);
@@ -93,29 +98,26 @@ export class ExportService {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
-    // Build the query
-    let query = `
+    // Get all time logs for the month
+    const query = `
       SELECT 
         tl.*,
         p.name as project_name,
+        p.description as project_description,
         DATE(tl.start_time) as date
       FROM time_logs tl
       LEFT JOIN projects p ON tl.project_id = p.id
       WHERE DATE(tl.start_time) >= ? AND DATE(tl.start_time) <= ?
         AND tl.end_time IS NOT NULL
+      ORDER BY tl.start_time
     `;
-    
-    const params: any[] = [startDateStr, endDateStr];
-    
-    if (projectId !== null) {
-      query += ' AND tl.project_id = ?';
-      params.push(projectId);
-    }
-    
-    query += ' ORDER BY tl.start_time';
 
     const stmt = this.db.prepare(query);
-    const logs = stmt.all(...params) as Array<TimeLog & { project_name: string | null; date: string }>;
+    const logs = stmt.all(startDateStr, endDateStr) as Array<TimeLog & { 
+      project_name: string | null; 
+      project_description: string | null; 
+      date: string 
+    }>;
 
     // Format the logs
     const formattedLogs: ExportedTimeLog[] = logs.map(log => ({
@@ -125,48 +127,48 @@ export class ExportService {
       duration_formatted: this.formatDuration(log.duration!)
     }));
 
-    // Group by date for daily breakdowns
-    const dailyBreakdowns: DailyBreakdown[] = [];
-    const logsByDate: { [key: string]: ExportedTimeLog[] } = {};
-
-    formattedLogs.forEach(log => {
-      if (!logsByDate[log.date]) {
-        logsByDate[log.date] = [];
+    // Group by project for breakdown
+    const projectTotals: { [key: string]: { hours: number, description: string } } = {};
+    
+    logs.forEach(log => {
+      const projectName = log.project_name || 'No Project';
+      const projectDesc = log.project_description || 'No description';
+      const durationMs = log.duration || 0;
+      
+      // Debug: log the duration values
+      console.log(`Log duration for ${projectName}: ${durationMs}ms (${durationMs / 1000} seconds)`);
+      
+      if (!projectTotals[projectName]) {
+        projectTotals[projectName] = { hours: 0, description: projectDesc };
       }
-      logsByDate[log.date].push(log);
+      projectTotals[projectName].hours += durationMs;
     });
 
-    Object.entries(logsByDate).forEach(([date, dayLogs]) => {
-      const totalDuration = dayLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
-      dailyBreakdowns.push({
-        date,
-        totalDuration,
-        totalFormatted: this.formatDuration(totalDuration),
-        logs: dayLogs
-      });
+    // Convert to project breakdowns (convert milliseconds to hours with more precision)
+    const projectBreakdowns: ProjectBreakdown[] = Object.entries(projectTotals).map(([projectName, data]) => {
+      const hoursValue = Math.round((data.hours / (1000 * 60 * 60)) * 10000) / 10000;
+      console.log(`${projectName}: ${data.hours}ms -> ${hoursValue} hours`);
+      
+      return {
+        project: projectName,
+        project_description: data.description,
+        hours: hoursValue, // Convert ms to hours, round to 4 decimals
+        month: month
+      };
     });
 
-    // Sort daily breakdowns by date
-    dailyBreakdowns.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Get project name
-    let projectName = 'All Projects';
-    if (projectId !== null) {
-      const projectStmt = this.db.prepare('SELECT name FROM projects WHERE id = ?');
-      const project = projectStmt.get(projectId) as { name: string } | undefined;
-      projectName = project?.name || 'Unknown Project';
-    }
+    // Sort by hours descending
+    projectBreakdowns.sort((a, b) => b.hours - a.hours);
 
     // Calculate total hours
-    const totalDuration = formattedLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
+    const totalDuration = logs.reduce((sum, log) => sum + (log.duration || 0), 0);
 
     return {
       month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }),
       year,
-      project: projectName,
       totalHours: totalDuration,
       totalFormatted: this.formatDuration(totalDuration),
-      dailyBreakdowns,
+      projectBreakdowns,
       allLogs: formattedLogs
     };
   }
@@ -174,37 +176,19 @@ export class ExportService {
   private async generateCSV(data: ExportData, filePath: string): Promise<void> {
     const lines: string[] = [];
     
-    // Header with metadata
-    lines.push(`# Time Log Export - ${data.month} ${data.year}`);
-    lines.push(`# Project: ${data.project}`);
-    lines.push(`# Total Hours: ${data.totalFormatted}`);
-    lines.push(`# Generated: ${new Date().toLocaleString()}`);
-    lines.push('');
+    // CSV headers matching the example format
+    lines.push('project,project_description,hours,month');
 
-    // CSV headers
-    lines.push('Date,Start Time,End Time,Duration,Description,Project');
-
-    // Add all time logs
-    data.allLogs.forEach(log => {
+    // Add project breakdowns
+    data.projectBreakdowns.forEach(breakdown => {
       const csvLine = [
-        log.date,
-        log.start_time_formatted,
-        log.end_time_formatted,
-        log.duration_formatted,
-        `"${(log.description || '').replace(/"/g, '""')}"`, // Escape quotes in descriptions
-        `"${(log.project_name || 'No Project').replace(/"/g, '""')}"`
+        `"${breakdown.project.replace(/"/g, '""')}"`, // Escape quotes in project names
+        `"${breakdown.project_description.replace(/"/g, '""')}"`, // Escape quotes in descriptions
+        breakdown.hours.toString(),
+        breakdown.month.toString()
       ].join(',');
       
       lines.push(csvLine);
-    });
-
-    // Add daily summary section
-    lines.push('');
-    lines.push('# Daily Summary');
-    lines.push('Date,Total Duration');
-    
-    data.dailyBreakdowns.forEach(day => {
-      lines.push(`${day.date},${day.totalFormatted}`);
     });
 
     // Write file
@@ -215,23 +199,59 @@ export class ExportService {
     // Create a new workbook
     const workbook = XLSX.utils.book_new();
 
+    // Create Project Breakdown sheet (main data)
+    const projectData = [
+      ['project', 'project_description', 'hours', 'month']
+    ];
+
+    data.projectBreakdowns.forEach(breakdown => {
+      projectData.push([
+        breakdown.project,
+        breakdown.project_description,
+        breakdown.hours.toString(),
+        breakdown.month.toString()
+      ]);
+    });
+
+    const projectSheet = XLSX.utils.aoa_to_sheet(projectData);
+    
+    // Set column widths for project sheet
+    projectSheet['!cols'] = [
+      { width: 20 }, // Project
+      { width: 30 }, // Description
+      { width: 10 }, // Hours
+      { width: 8 }   // Month
+    ];
+
+    // Style the header row
+    ['A1', 'B1', 'C1', 'D1'].forEach(cell => {
+      if (projectSheet[cell]) {
+        projectSheet[cell].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: 'E0E0E0' } },
+          alignment: { horizontal: 'center' }
+        };
+      }
+    });
+
+    XLSX.utils.book_append_sheet(workbook, projectSheet, 'Project Breakdown');
+
     // Create Summary sheet
     const summaryData = [
       ['Time Log Export Summary'],
       [''],
       ['Month', data.month],
       ['Year', data.year.toString()],
-      ['Project', data.project],
       ['Total Hours', data.totalFormatted],
       ['Generated', new Date().toLocaleString()],
       [''],
-      ['Daily Breakdown'],
-      ['Date', 'Total Hours'],
+      ['Project Summary'],
+      ['Project', 'Hours'],
     ];
 
-    // Add daily breakdown data
-    data.dailyBreakdowns.forEach(day => {
-      summaryData.push([day.date, day.totalFormatted]);
+    // Add project summary data
+    data.projectBreakdowns.forEach(breakdown => {
+      summaryData.push([breakdown.project, breakdown.hours.toString()]);
     });
 
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
@@ -252,99 +272,19 @@ export class ExportService {
 
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
-    // Create Time Logs sheet
-    const timeLogsData = [
-      ['Date', 'Start Time', 'End Time', 'Duration', 'Description', 'Project']
-    ];
-
-    data.allLogs.forEach(log => {
-      timeLogsData.push([
-        log.date,
-        log.start_time_formatted,
-        log.end_time_formatted,
-        log.duration_formatted,
-        log.description || '',
-        log.project_name || 'No Project'
-      ]);
-    });
-
-    const timeLogsSheet = XLSX.utils.aoa_to_sheet(timeLogsData);
-    
-    // Set column widths for time logs sheet
-    timeLogsSheet['!cols'] = [
-      { width: 12 }, // Date
-      { width: 12 }, // Start Time
-      { width: 12 }, // End Time
-      { width: 10 }, // Duration
-      { width: 30 }, // Description
-      { width: 15 }  // Project
-    ];
-
-    // Style the header row
-    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach(cell => {
-      if (timeLogsSheet[cell]) {
-        timeLogsSheet[cell].s = {
-          font: { bold: true },
-          fill: { fgColor: { rgb: 'E0E0E0' } },
-          alignment: { horizontal: 'center' }
-        };
-      }
-    });
-
-    XLSX.utils.book_append_sheet(workbook, timeLogsSheet, 'Time Logs');
-
-    // Create Daily Breakdown sheet with more details
-    if (data.dailyBreakdowns.length > 0) {
-      const dailyData = [
-        ['Daily Time Log Breakdown'],
-        ['']
-      ];
-
-      data.dailyBreakdowns.forEach(day => {
-        dailyData.push([`Date: ${day.date}`, `Total: ${day.totalFormatted}`]);
-        dailyData.push(['Start Time', 'End Time', 'Duration', 'Description', 'Project']);
-        
-        day.logs.forEach(log => {
-          dailyData.push([
-            log.start_time_formatted,
-            log.end_time_formatted,
-            log.duration_formatted,
-            log.description || '',
-            log.project_name || 'No Project'
-          ]);
-        });
-        
-        dailyData.push(['']); // Empty row between days
-      });
-
-      const dailySheet = XLSX.utils.aoa_to_sheet(dailyData);
-      
-      // Set column widths
-      dailySheet['!cols'] = [
-        { width: 12 }, // Start Time / Date
-        { width: 12 }, // End Time / Total
-        { width: 10 }, // Duration
-        { width: 30 }, // Description
-        { width: 15 }  // Project
-      ];
-
-      XLSX.utils.book_append_sheet(workbook, dailySheet, 'Daily Breakdown');
-    }
-
     // Write the file
     XLSX.writeFile(workbook, filePath);
   }
 
-  private generateFileName(options: ExportOptions, projectName: string): string {
+  private generateFileName(options: ExportOptions): string {
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
     const monthName = monthNames[options.month - 1];
-    const projectPart = projectName === 'All Projects' ? 'All' : projectName.replace(/[^a-zA-Z0-9]/g, '_');
     
-    return `TimeLog_${monthName}_${options.year}_${projectPart}.${options.format}`;
+    return `TimeLog_${monthName}_${options.year}_ProjectBreakdown.${options.format}`;
   }
 
   private formatTime(isoString: string): string {
