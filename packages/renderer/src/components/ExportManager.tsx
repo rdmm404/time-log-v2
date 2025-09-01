@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomDropdown from './CustomDropdown';
 
 // Access the export API via the global window object
 declare global {
@@ -46,6 +47,7 @@ const ExportManager: React.FC = () => {
     error: null
   });
 
+
   // Generate years from 2020 to current year + 1
   const years = Array.from({ length: currentDate.getFullYear() - 2019 }, (_, i) => 2020 + i);
   
@@ -53,6 +55,14 @@ const ExportManager: React.FC = () => {
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Dropdown options
+  const yearOptions = years.map(year => ({ value: year, label: year.toString() }));
+  const monthOptions = months.map((month, index) => ({ value: index + 1, label: month }));
+  const formatOptions = [
+    { value: 'csv' as const, label: 'CSV (.csv)' },
+    { value: 'xlsx' as const, label: 'Excel (.xlsx)' }
   ];
 
   const handleExport = async () => {
@@ -130,67 +140,34 @@ const ExportManager: React.FC = () => {
           <p className="text-text/70">Export a monthly breakdown of hours per project for the selected month.</p>
         </div>
 
-        <div className="bg-foreground rounded-xl p-6 shadow-lg mb-6">
+        <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-semibold text-text mb-4">Export Options</h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {/* Year Selector */}
-            <div>
-              <label htmlFor="year" className="block text-sm font-medium text-text mb-2">
-                Year
-              </label>
-              <select
-                id="year"
-                value={exportOptions.year}
-                onChange={(e) => setExportOptions(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                className="w-full px-3 py-2 border border-secondary/30 rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdown
+              label="Year"
+              value={exportOptions.year}
+              onChange={(year) => setExportOptions(prev => ({ ...prev, year }))}
+              options={yearOptions}
+            />
 
-            {/* Month Selector */}
-            <div>
-              <label htmlFor="month" className="block text-sm font-medium text-text mb-2">
-                Month
-              </label>
-              <select
-                id="month"
-                value={exportOptions.month}
-                onChange={(e) => setExportOptions(prev => ({ ...prev, month: parseInt(e.target.value) }))}
-                className="w-full px-3 py-2 border border-secondary/30 rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {months.map((month, index) => (
-                  <option key={index + 1} value={index + 1}>{month}</option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdown
+              label="Month"
+              value={exportOptions.month}
+              onChange={(month) => setExportOptions(prev => ({ ...prev, month }))}
+              options={monthOptions}
+            />
 
-
-            {/* Format Selector */}
-            <div>
-              <label htmlFor="format" className="block text-sm font-medium text-text mb-2">
-                Format
-              </label>
-              <select
-                id="format"
-                value={exportOptions.format}
-                onChange={(e) => setExportOptions(prev => ({ 
-                  ...prev, 
-                  format: e.target.value as 'csv' | 'xlsx' 
-                }))}
-                className="w-full px-3 py-2 border border-secondary/30 rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="csv">CSV (.csv)</option>
-                <option value="xlsx">Excel (.xlsx)</option>
-              </select>
-            </div>
+            <CustomDropdown
+              label="Format"
+              value={exportOptions.format}
+              onChange={(format) => setExportOptions(prev => ({ ...prev, format }))}
+              options={formatOptions}
+            />
           </div>
 
           {/* Export Summary */}
-          <div className="bg-background rounded-lg p-4 mb-4">
+          <div className="bg-background/60 rounded-lg p-4 mb-4">
             <h3 className="font-medium text-text mb-2">Export Summary</h3>
             <p className="text-text/70 text-sm">
               Exporting {getSelectedMonthName()} {exportOptions.year} data with hours breakdown per project as{' '}
@@ -200,7 +177,7 @@ const ExportManager: React.FC = () => {
 
           {/* Export Status */}
           {(exportStatus.isExporting || exportStatus.message || exportStatus.error) && (
-            <div className="bg-background rounded-lg p-4 mb-4">
+            <div className="bg-background/60 rounded-lg p-4 mb-4">
               {exportStatus.error ? (
                 <div className="text-error">
                   <div className="flex items-center mb-2">
@@ -249,7 +226,7 @@ const ExportManager: React.FC = () => {
         </div>
 
         {/* Export Information */}
-        <div className="bg-foreground rounded-xl p-6 shadow-lg">
+        <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-semibold text-text mb-4">Export Information</h2>
           <div className="space-y-3 text-sm text-text/70">
             <div className="flex items-start">
