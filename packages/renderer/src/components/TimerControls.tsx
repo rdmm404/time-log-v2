@@ -19,7 +19,7 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   onDescriptionChange
 }) => {
   const { startTimer, stopTimer, setDescription } = useTimerActions();
-  const { activeProject, mostRecentProject, loadMostRecentProject } = useProject();
+  const { activeProject, mostRecentProject, loadMostRecentProject, loadProjects } = useProject();
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -72,7 +72,9 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   const handleProjectModalClose = async (projectSaved: boolean) => {
     setIsCreateProjectModalOpen(false);
     if (projectSaved) {
-      // Reload projects to reflect the new project
+      // Reload projects list to show the new project in dropdown
+      await loadProjects();
+      // Also reload MRU project 
       await loadMostRecentProject();
     }
   };

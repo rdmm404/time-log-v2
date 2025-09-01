@@ -128,19 +128,44 @@ const TimeLogManager: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 space-y-2">
-                        {/* Time Range */}
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-text/70">
-                            {formatDateTime(log.start_time, log.duration !== null && log.duration < 60)}
-                          </span>
-                          {log.end_time && (
-                            <>
-                              <span className="text-text/50">→</span>
-                              <span className="text-sm text-text/70">
-                                {formatDateTime(log.end_time, log.duration !== null && log.duration < 60)}
-                              </span>
-                            </>
+                        {/* Project and Time Range on same line */}
+                        <div className="flex items-center space-x-4">
+                          {/* Project */}
+                          {log.project_id ? (
+                            <div className="flex items-center space-x-2">
+                              {(() => {
+                                const project = getProjectById(log.project_id);
+                                return project ? (
+                                  <>
+                                    <div 
+                                      className="w-3 h-3 rounded-full border border-white/20"
+                                      style={{ backgroundColor: project.color }}
+                                    />
+                                    <span className="text-sm font-medium text-text">{project.name}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-sm text-text/50 italic">Unknown project</span>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-text/60 italic">No project</span>
                           )}
+                          
+                          {/* Time Range */}
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-text/70">
+                              {formatDateTime(log.start_time, log.duration !== null && log.duration < 60)}
+                            </span>
+                            {log.end_time && (
+                              <>
+                                <span className="text-text/50">→</span>
+                                <span className="text-sm text-text/70">
+                                  {formatDateTime(log.end_time, log.duration !== null && log.duration < 60)}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         {/* Description */}
@@ -151,26 +176,6 @@ const TimeLogManager: React.FC = () => {
                             </span>
                           )}
                         </div>
-
-                        {/* Project */}
-                        {log.project_id && (
-                          <div className="flex items-center space-x-2">
-                            {(() => {
-                              const project = getProjectById(log.project_id);
-                              return project ? (
-                                <>
-                                  <div 
-                                    className="w-3 h-3 rounded-full border border-white/20"
-                                    style={{ backgroundColor: project.color }}
-                                  />
-                                  <span className="text-sm text-text/70">{project.name}</span>
-                                </>
-                              ) : (
-                                <span className="text-sm text-text/50 italic">Unknown project</span>
-                              );
-                            })()}
-                          </div>
-                        )}
                       </div>
 
                       {/* Duration */}
