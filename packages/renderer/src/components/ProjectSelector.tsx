@@ -61,7 +61,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     );
   };
 
-  const renderOption = (option: { value: Project; label: string }, isSelected: boolean) => {
+  const renderOption = (option: { value: Project; label: string }) => {
     const project = option.value;
     
     return (

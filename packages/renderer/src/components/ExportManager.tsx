@@ -11,7 +11,7 @@ declare global {
 const getExportAPI = () => {
   // Find the export API in the global scope (exposed via preload)
   for (const key in window) {
-    if (typeof window[key] === 'object' && window[key]?.exportMonthlyData) {
+    if (typeof window[key] === 'object' && (window[key]?.exportMonthlyData || window[key]?.exportData)) {
       return window[key];
     }
   }
@@ -19,9 +19,10 @@ const getExportAPI = () => {
 };
 
 interface ExportOptions {
-  year: number;
-  month: number;
+  startDate: string; // YYYY-MM-DD format
+  endDate: string;   // YYYY-MM-DD format
   format: 'csv' | 'xlsx';
+  reportType: 'project-breakdown' | 'all-logs';
 }
 
 interface ExportStatus {
@@ -33,12 +34,22 @@ interface ExportStatus {
 
 const ExportManager: React.FC = () => {
   const currentDate = new Date();
+  // Set default to current month range
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
-    year: currentDate.getFullYear(),
-    month: currentDate.getMonth() + 1, // JavaScript months are 0-indexed
-    format: 'csv'
+    startDate: firstDayOfMonth.toISOString().split('T')[0],
+    endDate: lastDayOfMonth.toISOString().split('T')[0],
+    format: 'csv',
+    reportType: 'project-breakdown'
   });
+
+  // Helper state for UI controls
+  const [startMonth, setStartMonth] = useState(currentDate.getMonth() + 1);
+  const [startYear, setStartYear] = useState(currentDate.getFullYear());
+  const [endMonth, setEndMonth] = useState(currentDate.getMonth() + 1);
+  const [endYear, setEndYear] = useState(currentDate.getFullYear());
 
   const [exportStatus, setExportStatus] = useState<ExportStatus>({
     isExporting: false,
@@ -64,6 +75,32 @@ const ExportManager: React.FC = () => {
     { value: 'csv' as const, label: 'CSV (.csv)' },
     { value: 'xlsx' as const, label: 'Excel (.xlsx)' }
   ];
+  
+  const reportTypeOptions = [
+    { value: 'project-breakdown' as const, label: 'Project Breakdown' },
+    { value: 'all-logs' as const, label: 'All Time Logs' }
+  ];
+
+  // Helper functions to update date ranges when month/year selectors change
+  const updateStartDate = (month: number, year: number) => {
+    const firstDay = new Date(year, month - 1, 1);
+    setStartMonth(month);
+    setStartYear(year);
+    setExportOptions(prev => ({
+      ...prev,
+      startDate: firstDay.toISOString().split('T')[0]
+    }));
+  };
+
+  const updateEndDate = (month: number, year: number) => {
+    const lastDay = new Date(year, month, 0); // Last day of the month
+    setEndMonth(month);
+    setEndYear(year);
+    setExportOptions(prev => ({
+      ...prev,
+      endDate: lastDay.toISOString().split('T')[0]
+    }));
+  };
 
   const handleExport = async () => {
     const exportAPI = getExportAPI();
@@ -87,7 +124,10 @@ const ExportManager: React.FC = () => {
     try {
       setExportStatus(prev => ({ ...prev, progress: 25, message: 'Gathering data...' }));
       
-      const result = await exportAPI.exportMonthlyData(exportOptions);
+      // Use the new exportData method if available, fallback to exportMonthlyData
+      const result = exportAPI.exportData 
+        ? await exportAPI.exportData(exportOptions)
+        : await exportAPI.exportMonthlyData(exportOptions);
       
       setExportStatus(prev => ({ ...prev, progress: 100 }));
 
@@ -127,8 +167,15 @@ const ExportManager: React.FC = () => {
     }
   };
 
-  const getSelectedMonthName = () => {
-    return months[exportOptions.month - 1];
+  const formatDateRange = () => {
+    const startMonthName = months[startMonth - 1];
+    const endMonthName = months[endMonth - 1];
+    
+    if (startYear === endYear && startMonth === endMonth) {
+      return `${startMonthName} ${startYear}`;
+    } else {
+      return `${startMonthName} ${startYear} to ${endMonthName} ${endYear}`;
+    }
   };
 
 
@@ -137,25 +184,48 @@ const ExportManager: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text mb-2">Export Time Logs</h1>
-          <p className="text-text/70">Export a monthly breakdown of hours per project for the selected month.</p>
+          <p className="text-text/70">Export time logs and project breakdowns for any date range.</p>
         </div>
 
         <div className="bg-foreground/20 border border-foreground/30 rounded-xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-semibold text-text mb-4">Export Options</h2>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <CustomDropdown
-              label="Year"
-              value={exportOptions.year}
-              onChange={(year) => year && setExportOptions(prev => ({ ...prev, year }))}
-              options={yearOptions}
-            />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-2">
+              <CustomDropdown
+                label="Start Month"
+                value={startMonth}
+                onChange={(month) => month && updateStartDate(month, startYear)}
+                options={monthOptions}
+              />
+              <CustomDropdown
+                label="Start Year"
+                value={startYear}
+                onChange={(year) => year && updateStartDate(startMonth, year)}
+                options={yearOptions}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <CustomDropdown
+                label="End Month"
+                value={endMonth}
+                onChange={(month) => month && updateEndDate(month, endYear)}
+                options={monthOptions}
+              />
+              <CustomDropdown
+                label="End Year"
+                value={endYear}
+                onChange={(year) => year && updateEndDate(endMonth, year)}
+                options={yearOptions}
+              />
+            </div>
 
             <CustomDropdown
-              label="Month"
-              value={exportOptions.month}
-              onChange={(month) => month && setExportOptions(prev => ({ ...prev, month }))}
-              options={monthOptions}
+              label="Report Type"
+              value={exportOptions.reportType}
+              onChange={(reportType) => reportType && setExportOptions(prev => ({ ...prev, reportType }))}
+              options={reportTypeOptions}
             />
 
             <CustomDropdown
@@ -170,8 +240,9 @@ const ExportManager: React.FC = () => {
           <div className="bg-background/60 rounded-lg p-4 mb-4">
             <h3 className="font-medium text-text mb-2">Export Summary</h3>
             <p className="text-text/70 text-sm">
-              Exporting {getSelectedMonthName()} {exportOptions.year} data with hours breakdown per project as{' '}
-              <span className="font-medium uppercase">{exportOptions.format}</span> format.
+              Exporting {formatDateRange()} data as{' '}
+              <span className="font-medium">{reportTypeOptions.find(opt => opt.value === exportOptions.reportType)?.label}</span>{' '}
+              in <span className="font-medium uppercase">{exportOptions.format}</span> format.
             </p>
           </div>
 
@@ -234,7 +305,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">CSV Format:</span> Includes columns for project, project_description, hours, and month - showing total hours per project.
+                <span className="font-medium">Project Breakdown:</span> Aggregated data showing total hours per project for the selected date range, sorted by hours descending.
               </p>
             </div>
             <div className="flex items-start">
@@ -242,7 +313,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">Excel Format:</span> Includes a Project Breakdown sheet with the main data and a Summary sheet with overview statistics.
+                <span className="font-medium">All Time Logs:</span> Individual time entries with start/end times, duration, and project information for the selected date range.
               </p>
             </div>
             <div className="flex items-start">
@@ -250,7 +321,7 @@ const ExportManager: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                <span className="font-medium">Project Summary:</span> Hours are calculated as the total time logged for each project during the selected month, sorted by hours descending.
+                <span className="font-medium">Excel Format:</span> Includes multiple sheets with the main data and a Summary sheet with overview statistics.
               </p>
             </div>
           </div>

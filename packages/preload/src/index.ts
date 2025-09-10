@@ -94,6 +94,13 @@ export const projectAPI = {
 };
 
 export interface ExportOptions {
+  startDate: string; // YYYY-MM-DD format
+  endDate: string;   // YYYY-MM-DD format
+  format: 'csv' | 'xlsx';
+  reportType: 'project-breakdown' | 'all-logs';
+}
+
+export interface LegacyExportOptions {
   year: number;
   month: number;
   format: 'csv' | 'xlsx';
@@ -101,7 +108,10 @@ export interface ExportOptions {
 
 // Export API for renderer
 export const exportAPI = {
-  exportMonthlyData: (options: ExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> =>
+  exportData: (options: ExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> =>
+    ipcRenderer.invoke('export:data', options),
+    
+  exportMonthlyData: (options: LegacyExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> =>
     ipcRenderer.invoke('export:monthly', options),
 };
 

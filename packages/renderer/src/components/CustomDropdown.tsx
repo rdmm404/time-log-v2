@@ -73,7 +73,7 @@ function CustomDropdown<T = string | number>({
       >
         <div className="flex-1 min-w-0">
           {renderSelected ? (
-            renderSelected(selectedOption)
+            renderSelected(selectedOption || null)
           ) : (
             <span className={selectedOption ? '' : 'text-text/50'}>{displayValue}</span>
           )}

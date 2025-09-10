@@ -6,9 +6,10 @@ import * as XLSX from 'xlsx';
 import type {TimeLog, Project} from '../modules/DatabaseModule.js';
 
 export interface ExportOptions {
-  year: number;
-  month: number;
+  startDate: string; // YYYY-MM-DD format
+  endDate: string;   // YYYY-MM-DD format
   format: 'csv' | 'xlsx';
+  reportType: 'project-breakdown' | 'all-logs';
 }
 
 export interface ExportedTimeLog extends TimeLog {
@@ -45,7 +46,61 @@ export interface ExportData {
 export class ExportService {
   constructor(private db: Database) {}
 
-  async exportMonthlyData(options: ExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> {
+  async exportData(options: ExportOptions): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    try {
+      // Get the export data based on report type
+      const exportData = options.reportType === 'project-breakdown' 
+        ? await this.getProjectBreakdownData(options)
+        : await this.getAllLogsData(options);
+      
+      if (exportData.allLogs.length === 0) {
+        return { success: false, error: 'No time logs found for the selected criteria' };
+      }
+
+      // Generate filename and ask user where to save
+      const defaultFileName = this.generateFileNameForRange(options);
+      
+      const result = await dialog.showSaveDialog({
+        title: 'Save Export File',
+        defaultPath: defaultFileName,
+        filters: [
+          options.format === 'csv' 
+            ? { name: 'CSV files', extensions: ['csv'] }
+            : { name: 'Excel files', extensions: ['xlsx'] }
+        ]
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'Export cancelled by user' };
+      }
+
+      // Generate and save the file based on report type
+      if (options.reportType === 'project-breakdown') {
+        if (options.format === 'csv') {
+          await this.generateCSV(exportData, result.filePath);
+        } else {
+          await this.generateXLSX(exportData, result.filePath);
+        }
+      } else {
+        if (options.format === 'csv') {
+          await this.generateAllLogsCSV(exportData, result.filePath);
+        } else {
+          await this.generateAllLogsXLSX(exportData, result.filePath);
+        }
+      }
+
+      return { success: true, filePath: result.filePath };
+    } catch (error) {
+      console.error('Export failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown export error' 
+      };
+    }
+  }
+
+  // Legacy method for backward compatibility
+  async exportMonthlyData(options: { year: number; month: number; format: 'csv' | 'xlsx' }): Promise<{ success: boolean; filePath?: string; error?: string }> {
     try {
       // Get the export data
       const exportData = await this.getMonthlyData(options);
@@ -88,15 +143,8 @@ export class ExportService {
     }
   }
 
-  private async getMonthlyData(options: ExportOptions): Promise<ExportData> {
-    const { year, month } = options;
-    
-    // Calculate date range for the month
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0); // Last day of the month
-    
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
+  private async getProjectBreakdownData(options: ExportOptions): Promise<ExportData> {
+    const { startDate, endDate } = options;
 
     // Use SQL aggregation query for accurate project breakdown
     const projectQuery = `
@@ -121,7 +169,7 @@ export class ExportService {
     `;
 
     const projectStmt = this.db.prepare(projectQuery);
-    const projectBreakdowns = projectStmt.all(startDateStr, endDateStr) as ProjectBreakdown[];
+    const projectBreakdowns = projectStmt.all(startDate, endDate) as ProjectBreakdown[];
 
     // Get individual logs for allLogs (for potential future use)
     const logsQuery = `
@@ -138,7 +186,7 @@ export class ExportService {
     `;
 
     const logsStmt = this.db.prepare(logsQuery);
-    const logs = logsStmt.all(startDateStr, endDateStr) as Array<TimeLog & { 
+    const logs = logsStmt.all(startDate, endDate) as Array<TimeLog & { 
       project_name: string | null; 
       project_description: string | null; 
       date: string 
@@ -156,14 +204,85 @@ export class ExportService {
     const totalHours = projectBreakdowns.reduce((sum, project) => sum + project.hours, 0);
     const totalDuration = totalHours * 60 * 60 * 1000; // Convert back to ms for formatDuration
 
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
     return {
-      month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }),
-      year,
+      month: this.formatDateRange(startDateObj, endDateObj),
+      year: startDateObj.getFullYear(),
       totalHours: totalDuration,
       totalFormatted: this.formatDuration(totalDuration),
       projectBreakdowns,
       allLogs: formattedLogs
     };
+  }
+
+  private async getAllLogsData(options: ExportOptions): Promise<ExportData> {
+    const { startDate, endDate } = options;
+
+    // Get all individual logs for the date range
+    const logsQuery = `
+      SELECT 
+        tl.*,
+        p.name as project_name,
+        p.description as project_description,
+        DATE(tl.start_time) as date
+      FROM time_logs tl
+      LEFT JOIN projects p ON tl.project_id = p.id
+      WHERE DATE(tl.start_time) >= ? AND DATE(tl.start_time) <= ?
+        AND tl.end_time IS NOT NULL
+      ORDER BY tl.start_time
+    `;
+
+    const logsStmt = this.db.prepare(logsQuery);
+    const logs = logsStmt.all(startDate, endDate) as Array<TimeLog & { 
+      project_name: string | null; 
+      project_description: string | null; 
+      date: string 
+    }>;
+
+    // Format the logs
+    const formattedLogs: ExportedTimeLog[] = logs.map(log => ({
+      ...log,
+      start_time_formatted: this.formatTime(log.start_time),
+      end_time_formatted: this.formatTime(log.end_time!),
+      duration_formatted: this.formatDuration(log.duration!)
+    }));
+
+    // Calculate total hours
+    const totalDuration = logs.reduce((sum, log) => sum + (log.duration || 0), 0);
+
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    return {
+      month: this.formatDateRange(startDateObj, endDateObj),
+      year: startDateObj.getFullYear(),
+      totalHours: totalDuration,
+      totalFormatted: this.formatDuration(totalDuration),
+      projectBreakdowns: [], // Not used for all-logs report
+      allLogs: formattedLogs
+    };
+  }
+
+  // Legacy method for backward compatibility - keep the original getMonthlyData method
+  private async getMonthlyData(options: { year: number; month: number }): Promise<ExportData> {
+    const { year, month } = options;
+    
+    // Calculate date range for the month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0); // Last day of the month
+    
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    // Convert to new format and call getProjectBreakdownData
+    return this.getProjectBreakdownData({
+      startDate: startDateStr,
+      endDate: endDateStr,
+      format: 'csv',
+      reportType: 'project-breakdown'
+    });
   }
 
   private async generateCSV(data: ExportData, filePath: string): Promise<void> {
@@ -269,7 +388,144 @@ export class ExportService {
     XLSX.writeFile(workbook, filePath);
   }
 
-  private generateFileName(options: ExportOptions): string {
+  private async generateAllLogsCSV(data: ExportData, filePath: string): Promise<void> {
+    const lines: string[] = [];
+    
+    // CSV headers for all logs
+    lines.push('date,project,start_time,end_time,duration,description');
+
+    // Add individual log entries
+    data.allLogs.forEach(log => {
+      const csvLine = [
+        log.date,
+        `"${(log.project_name || 'No Project').replace(/"/g, '""')}"`,
+        log.start_time_formatted,
+        log.end_time_formatted,
+        log.duration_formatted,
+        `"${(log.description || '').replace(/"/g, '""')}"`
+      ].join(',');
+      
+      lines.push(csvLine);
+    });
+
+    // Write file
+    await fs.writeFile(filePath, lines.join('\n'), 'utf8');
+  }
+
+  private async generateAllLogsXLSX(data: ExportData, filePath: string): Promise<void> {
+    // Create a new workbook
+    const workbook = XLSX.utils.book_new();
+
+    // Create All Logs sheet (main data)
+    const logsData = [
+      ['Date', 'Project', 'Start Time', 'End Time', 'Duration', 'Description']
+    ];
+
+    data.allLogs.forEach(log => {
+      logsData.push([
+        log.date,
+        log.project_name || 'No Project',
+        log.start_time_formatted,
+        log.end_time_formatted,
+        log.duration_formatted,
+        log.description || ''
+      ]);
+    });
+
+    const logsSheet = XLSX.utils.aoa_to_sheet(logsData);
+    
+    // Set column widths for logs sheet
+    logsSheet['!cols'] = [
+      { width: 12 }, // Date
+      { width: 20 }, // Project
+      { width: 12 }, // Start Time
+      { width: 12 }, // End Time
+      { width: 10 }, // Duration
+      { width: 30 }  // Description
+    ];
+
+    // Style the header row
+    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach(cell => {
+      if (logsSheet[cell]) {
+        logsSheet[cell].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: 'E0E0E0' } },
+          alignment: { horizontal: 'center' }
+        };
+      }
+    });
+
+    XLSX.utils.book_append_sheet(workbook, logsSheet, 'All Time Logs');
+
+    // Create Summary sheet
+    const summaryData = [
+      ['Time Log Export Summary'],
+      [''],
+      ['Date Range', data.month],
+      ['Report Type', 'All Time Logs'],
+      ['Total Entries', data.allLogs.length.toString()],
+      ['Total Time', data.totalFormatted],
+      ['Generated', new Date().toLocaleString()],
+    ];
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    
+    // Set column widths for summary sheet
+    summarySheet['!cols'] = [
+      { width: 20 }, // Column A
+      { width: 25 }  // Column B
+    ];
+
+    // Style the header row
+    if (summarySheet['A1']) {
+      summarySheet['A1'].s = {
+        font: { bold: true, size: 14 },
+        alignment: { horizontal: 'center' }
+      };
+    }
+
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // Write the file
+    XLSX.writeFile(workbook, filePath);
+  }
+
+  private generateFileNameForRange(options: ExportOptions): string {
+    const startDate = new Date(options.startDate);
+    const endDate = new Date(options.endDate);
+    
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      return `${year}-${month}`;
+    };
+    
+    const reportTypeLabel = options.reportType === 'project-breakdown' ? 'ProjectBreakdown' : 'AllLogs';
+    const dateRange = formatDate(startDate) === formatDate(endDate) 
+      ? formatDate(startDate) 
+      : `${formatDate(startDate)}_to_${formatDate(endDate)}`;
+    
+    return `TimeLog_${dateRange}_${reportTypeLabel}.${options.format}`;
+  }
+
+  private formatDateRange(startDate: Date, endDate: Date): string {
+    const formatOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long' 
+    };
+    
+    const start = startDate.toLocaleDateString(undefined, formatOptions);
+    const end = endDate.toLocaleDateString(undefined, formatOptions);
+    
+    if (start === end) {
+      return start;
+    } else {
+      return `${start} to ${end}`;
+    }
+  }
+
+  // Legacy method for backward compatibility
+  private generateFileName(options: { year: number; month: number; format: string }): string {
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'

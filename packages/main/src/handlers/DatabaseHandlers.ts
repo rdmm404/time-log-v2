@@ -188,7 +188,15 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, projectSer
   });
 
   // Export operations
-  ipcMain.handle('export:monthly', async (_, options: ExportOptions) => {
+  ipcMain.handle('export:data', async (_, options: ExportOptions) => {
+    try {
+      return await exportService.exportData(options);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to export data');
+    }
+  });
+
+  ipcMain.handle('export:monthly', async (_, options: { year: number; month: number; format: 'csv' | 'xlsx' }) => {
     try {
       return await exportService.exportMonthlyData(options);
     } catch (error) {
