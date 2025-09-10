@@ -114,29 +114,44 @@ the most recent project. this shouldn't be the case.
 - ✅ When a new project is created, the project selection dropdown does not show the new project.
 - ✅ Fix layout for time logs in "Today's Time Logs" and "Time Log Manager". the project should be at the top left, horizontal to the times. So it should be something like "Project 5    03:53 PM - 03:54 PM".
 
-
 ### Task 9 - Basic Monthly Export
+Implement simple CSV/Excel export for monthly hours
+**Status:** ✅ COMPLETED
+**Steps:**
+- ✅ Create month selector UI component
+- ✅ Build CSV export functionality with monthly data
+- ✅ Add Excel export capability (.xlsx format). IMPORTANT: on the process side, not client
+- ✅ UI should render current export status
+- ✅ Implement hours-per-day breakdown format
+- ✅ Add export progress feedback and success notifications
+- ✅ Create project-based filtering and reporting
+- ✅ Add monthly breakdown per-project report export
+
+### Task 9.5 - Exports enhancements
 Implement simple CSV/Excel export for monthly hours
 **Status:** TODO
 **Steps:**
-- Create month selector UI component
-- Build CSV export functionality with monthly data
-- Add Excel export capability (.xlsx format). IMPORTANT: on the process side, not client
-- UI should render current export status
-- Implement hours-per-day breakdown format
-- Add export progress feedback and success notifications
-- Create project-based filtering and reporting
-- Add monthly breakdown per-project report export
+- Update month selection to be a range instead of a singular month
+- Add a new type of report that simply exports all time logs, also with project information
+    - this should be similar to the existing one, just use SQL for the report and data aggregation and TS should only be used for the CSV/XLSX formatting logic.
+
+### Task 9.6 - Project enhancements
+- Add new view for seeing a list of all time logs per project, when a project is clicked on the "Projects Page"
+- Add current project information to the system tray widget (and allow changing project from context menu)
+- Update new project modal so that clicking anywhere outside closes it
+- Also fix the system tray widget window to remove scroll
 
 ### Task 10 - Settings and Configuration
 Build settings panel for core app configuration
 **Status:** TODO
 **Steps:**
 - Create settings UI with tabs/sections
-- Implement theme switching (light/dark)
 - Add startup launch configuration
-- Build keybind customization interface
 - Add settings persistence and validation
+
+Not required
+- Implement theme switching (light/dark)
+- Build keybind customization interface
 
 ## Phase 5: Secondary Features
 
