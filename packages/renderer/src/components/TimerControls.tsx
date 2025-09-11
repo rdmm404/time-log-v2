@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTimerActions } from '../hooks/useTimerActions';
+import { useTimer } from '../contexts/TimerContext';
 import { useProject } from '../contexts/ProjectContext';
 import ProjectSelector from './ProjectSelector';
 import { ProjectEditModal } from './ProjectEditModal';
@@ -18,8 +19,9 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   description,
   onDescriptionChange
 }) => {
-  const { startTimer, stopTimer, setDescription } = useTimerActions();
-  const { activeProject, mostRecentProject, loadMostRecentProject, loadProjects } = useProject();
+  const { startTimer, stopTimer, setDescription, setCurrentProject } = useTimerActions();
+  const { state: timerState } = useTimer();
+  const { activeProject, mostRecentProject, loadMostRecentProject, loadProjects, projects } = useProject();
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -31,6 +33,22 @@ const TimerControls: React.FC<TimerControlsProps> = ({
       setSelectedProject(mostRecentProject);
     }
   }, [mostRecentProject, hasUserSelectedProject]);
+
+  // Sync selected project with timer state (for changes from tray)
+  useEffect(() => {
+    if (timerState.projectId !== null) {
+      // Find the project by ID
+      const currentProject = projects.find(p => p.id === timerState.projectId);
+      if (currentProject && selectedProject?.id !== currentProject.id) {
+        setSelectedProject(currentProject);
+        setHasUserSelectedProject(true);
+      }
+    } else if (timerState.projectId === null && selectedProject !== null) {
+      // Timer state says no project, but we have one selected
+      setSelectedProject(null);
+      setHasUserSelectedProject(true);
+    }
+  }, [timerState.projectId, projects, selectedProject]);
 
   const handleStart = async () => {
     try {
@@ -79,9 +97,17 @@ const TimerControls: React.FC<TimerControlsProps> = ({
     }
   };
 
-  const handleProjectChange = (project: Project | null) => {
+  const handleProjectChange = async (project: Project | null) => {
     setSelectedProject(project);
     setHasUserSelectedProject(true);
+    
+    // Update main process state immediately when user changes project
+    try {
+      await setCurrentProject(project?.id || null);
+    } catch (err) {
+      console.error('Failed to update current project:', err);
+      // Don't show error to user as this is background sync
+    }
   };
 
   return (

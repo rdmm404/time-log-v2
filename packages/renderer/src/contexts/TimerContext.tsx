@@ -118,6 +118,7 @@ export interface TimerContextType {
   stopTimer: (description?: string) => Promise<void>;
   setDescription: (description: string) => void;
   setProjectId: (projectId: number | null) => void;
+  setCurrentProject: (projectId: number | null) => Promise<void>;
   formatElapsedTime: (seconds: number) => string;
   clearError: () => void;
 }
@@ -201,9 +202,22 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dispatch({ type: 'SET_DESCRIPTION', payload: { description } });
   }, []);
 
-  // Set project ID
+  // Set project ID (local only)
   const setProjectId = useCallback((projectId: number | null) => {
     dispatch({ type: 'SET_PROJECT_ID', payload: { projectId } });
+  }, []);
+
+  // Set current project (updates main process state)
+  const setCurrentProject = useCallback(async (projectId: number | null) => {
+    try {
+      dispatch({ type: 'SET_ERROR', payload: { error: null } });
+      // Update main process state
+      await timeLogAPI.setCurrentProject(projectId);
+      // Local state will be updated via the state change event from main process
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set current project';
+      dispatch({ type: 'SET_ERROR', payload: { error: errorMessage } });
+    }
   }, []);
 
   // Clear error
@@ -232,9 +246,19 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           startTimeRef.current = new Date(timerState.currentSession.start_time);
         }
       } else {
-        // Timer is stopped
+        // Timer is stopped - sync project state even when not running
         stopTimerInterval();
         dispatch({ type: 'STOP_TIMER' });
+        
+        // Update project state if it changed while timer was stopped
+        if (timerState.projectId !== state.projectId) {
+          dispatch({ type: 'SET_PROJECT_ID', payload: { projectId: timerState.projectId } });
+        }
+      }
+      
+      // Always update project state if it has changed (for both running and stopped states)
+      if (timerState.projectId !== state.projectId) {
+        dispatch({ type: 'SET_PROJECT_ID', payload: { projectId: timerState.projectId } });
       }
     });
 
@@ -270,6 +294,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     stopTimer,
     setDescription,
     setProjectId,
+    setCurrentProject,
     formatElapsedTime,
     clearError,
   };

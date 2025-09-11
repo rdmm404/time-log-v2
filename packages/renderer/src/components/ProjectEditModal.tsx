@@ -98,8 +98,18 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ project, onC
     onClose(false);
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if clicking the backdrop, not the modal content
+    if (e.target === e.currentTarget) {
+      onClose(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-background border border-foreground/20 rounded-lg p-6 w-96 max-w-[90vw] max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-medium text-text mb-6">
           {isEditing ? 'Edit Project' : 'New Project'}

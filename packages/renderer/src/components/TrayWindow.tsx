@@ -5,13 +5,17 @@ interface TrayTimerState {
   isRunning: boolean;
   elapsedTime: number;
   description: string;
+  projectName: string | null;
+  projectColor: string | null;
 }
 
 export const TrayWindow: React.FC = () => {
   const [timerState, setTimerState] = useState<TrayTimerState>({
     isRunning: false,
     elapsedTime: 0,
-    description: ''
+    description: '',
+    projectName: null,
+    projectColor: null
   });
 
   useEffect(() => {
@@ -52,7 +56,7 @@ export const TrayWindow: React.FC = () => {
   };
 
   return (
-    <div className="bg-background rounded-lg shadow-lg p-4 border border-foreground/30">
+    <div className="bg-background rounded-lg shadow-lg p-4 border border-foreground/30 overflow-hidden">
       <div className="flex flex-col items-center space-y-4">
         {/* Timer Display */}
         <div className="text-center">
@@ -69,6 +73,19 @@ export const TrayWindow: React.FC = () => {
           {timerState.description && (
             <div className="text-xs text-text/70 mt-1 truncate max-w-[200px]">
               {timerState.description}
+            </div>
+          )}
+          {timerState.projectName && (
+            <div className="flex items-center space-x-2 mt-1">
+              {timerState.projectColor && (
+                <div 
+                  className="w-3 h-3 rounded-full border border-white/20"
+                  style={{ backgroundColor: timerState.projectColor }}
+                />
+              )}
+              <div className="text-xs text-text/70 truncate max-w-[180px]">
+                {timerState.projectName}
+              </div>
             </div>
           )}
         </div>

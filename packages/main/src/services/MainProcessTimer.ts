@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { TimeLogService } from './TimeLogService.js';
+import { ProjectService } from './ProjectService.js';
 import type { TimeLog } from '../../../preload/src/index.js';
 
 export interface TimerState {
@@ -8,10 +9,13 @@ export interface TimerState {
   elapsedTime: number;
   description: string;
   projectId: number | null;
+  projectName: string | null;
+  projectColor: string | null;
 }
 
 export class MainProcessTimer extends EventEmitter {
   private timeLogService: TimeLogService;
+  private projectService: ProjectService;
   private timerInterval: NodeJS.Timeout | null = null;
   private state: TimerState = {
     isRunning: false,
@@ -19,11 +23,14 @@ export class MainProcessTimer extends EventEmitter {
     elapsedTime: 0,
     description: '',
     projectId: null,
+    projectName: null,
+    projectColor: null,
   };
 
-  constructor(timeLogService: TimeLogService) {
+  constructor(timeLogService: TimeLogService, projectService: ProjectService) {
     super();
     this.timeLogService = timeLogService;
+    this.projectService = projectService;
     this.restoreActiveSession();
   }
 
@@ -39,6 +46,17 @@ export class MainProcessTimer extends EventEmitter {
 
       const session = await this.timeLogService.startTimer(finalDescription, finalProjectId);
       
+      // Get project information if projectId is provided
+      let projectName = null;
+      let projectColor = null;
+      if (finalProjectId) {
+        const project = await this.projectService.getProjectById(finalProjectId);
+        if (project) {
+          projectName = project.name;
+          projectColor = project.color;
+        }
+      }
+      
       this.state = {
         ...this.state,
         isRunning: true,
@@ -46,6 +64,8 @@ export class MainProcessTimer extends EventEmitter {
         elapsedTime: 0,
         description: finalDescription,
         projectId: finalProjectId,
+        projectName,
+        projectColor,
       };
 
       this.startTimerInterval();
@@ -79,6 +99,9 @@ export class MainProcessTimer extends EventEmitter {
         currentSession: null,
         elapsedTime: 0,
         description: '',
+        projectId: null,
+        projectName: null,
+        projectColor: null,
       };
 
       this.emitStateChange();
@@ -144,12 +167,25 @@ export class MainProcessTimer extends EventEmitter {
         const now = new Date();
         const elapsedTime = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         
+        // Get project information if available
+        let projectName = null;
+        let projectColor = null;
+        if (activeSession.project_id) {
+          const project = this.projectService.getProjectById(activeSession.project_id);
+          if (project) {
+            projectName = project.name;
+            projectColor = project.color;
+          }
+        }
+        
         this.state = {
           isRunning: true,
           currentSession: activeSession,
           elapsedTime,
           description: activeSession.description,
           projectId: activeSession.project_id,
+          projectName,
+          projectColor,
         };
 
         this.startTimerInterval();
@@ -162,6 +198,27 @@ export class MainProcessTimer extends EventEmitter {
 
   private emitStateChange(): void {
     this.emit('state-changed', this.getState());
+  }
+
+  async setDefaultProject(projectId: number | null): Promise<void> {
+    let projectName = null;
+    let projectColor = null;
+    if (projectId) {
+      const project = await this.projectService.getProjectById(projectId);
+      if (project) {
+        projectName = project.name;
+        projectColor = project.color;
+      }
+    }
+
+    this.state = {
+      ...this.state,
+      projectId,
+      projectName,
+      projectColor,
+    };
+
+    this.emitStateChange();
   }
 
   destroy(): void {

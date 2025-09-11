@@ -129,10 +129,10 @@ Implement simple CSV/Excel export for monthly hours
 
 ### Task 9.5 - Exports enhancements
 Implement simple CSV/Excel export for monthly hours
-**Status:** TODO
+**Status:** ✅ DONE
 **Steps:**
-- Update month selection to be a range instead of a singular month
-- Add a new type of report that simply exports all time logs, also with project information
+- ✅ Update month selection to be a range instead of a singular month
+- ✅ Add a new type of report that simply exports all time logs, also with project information
     - this should be similar to the existing one, just use SQL for the report and data aggregation and TS should only be used for the CSV/XLSX formatting logic.
 
 ### Task 9.6 - Project enhancements

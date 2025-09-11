@@ -66,6 +66,12 @@ export const timeLogAPI = {
 
   getRecentTimeLogs: (limit?: number): Promise<TimeLog[]> =>
     ipcRenderer.invoke('timelog:getRecent', limit),
+
+  getTimeLogsByProject: (projectId: number): Promise<TimeLog[]> =>
+    ipcRenderer.invoke('timelog:getByProject', projectId),
+
+  setCurrentProject: (projectId: number | null): Promise<void> =>
+    ipcRenderer.invoke('timer:setCurrentProject', projectId),
 };
 
 // Project API for renderer

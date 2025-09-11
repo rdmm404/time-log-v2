@@ -61,14 +61,15 @@ export async function initApp(initConfig: AppInitConfig) {
   const timeLogService = new TimeLogService(database);
   const projectService = new ProjectService(database);
   const exportService = new ExportService(database);
-  const mainProcessTimer = new MainProcessTimer(timeLogService);
+  const mainProcessTimer = new MainProcessTimer(timeLogService, projectService);
   
   // Initialize system tray with timer
   const systemTray = createSystemTrayModule({ 
     windowManager, 
     preloadPath: initConfig.preload.path,
     rendererConfig: initConfig.renderer,
-    mainProcessTimer
+    mainProcessTimer,
+    projectService
   });
   await systemTray.enable({ app: (await import('electron')).app });
 

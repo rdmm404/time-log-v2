@@ -7,7 +7,7 @@ import { timeLogAPI } from '@app/preload';
  * Custom hook for timer actions with validation
  */
 export const useTimerActions = () => {
-  const { state, startTimer, stopTimer, setDescription, setProjectId, clearError } = useTimer();
+  const { state, startTimer, stopTimer, setDescription, setProjectId, setCurrentProject, clearError } = useTimer();
 
   // Start timer with validation
   const startTimerWithValidation = useCallback(async (
@@ -84,6 +84,7 @@ export const useTimerActions = () => {
     stopTimer: stopTimerWithValidation,
     setDescription: setDescriptionWithValidation,
     setProjectId,
+    setCurrentProject,
     clearError,
     
     // Enhanced actions

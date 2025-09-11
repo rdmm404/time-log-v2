@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI } from '@app/preload';
 import { ProjectEditModal } from './ProjectEditModal';
+import ProjectTimeLogsView from './ProjectTimeLogsView';
 import type { Project } from '@app/preload';
 
 const ProjectManager: React.FC = () => {
@@ -10,6 +11,7 @@ const ProjectManager: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -56,6 +58,14 @@ const ProjectManager: React.FC = () => {
     }
   };
 
+  const handleViewProject = (projectId: number) => {
+    setViewingProjectId(projectId);
+  };
+
+  const handleBackFromProjectView = () => {
+    setViewingProjectId(null);
+  };
+
   const formatDuration = (seconds: number): string => {
     if (seconds === 0) return '0h 0m';
     
@@ -64,6 +74,16 @@ const ProjectManager: React.FC = () => {
     
     return `${hours}h ${minutes}m`;
   };
+
+  // If viewing a specific project, show the time logs view
+  if (viewingProjectId) {
+    return (
+      <ProjectTimeLogsView 
+        projectId={viewingProjectId} 
+        onBack={handleBackFromProjectView} 
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -113,12 +133,16 @@ const ProjectManager: React.FC = () => {
           {projects.map((project) => (
             <div key={project.id} className="bg-foreground/30 rounded-lg p-4 border border-foreground/20">
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
+                <div 
+                  className="flex items-center space-x-3 cursor-pointer flex-1"
+                  onClick={() => handleViewProject(project.id!)}
+                  title="View project time logs"
+                >
                   <div 
                     className="w-4 h-4 rounded-full border-2 border-white/20"
                     style={{ backgroundColor: project.color }}
                   />
-                  <h3 className="font-medium text-text truncate">{project.name}</h3>
+                  <h3 className="font-medium text-text truncate hover:text-primary transition-colors duration-200">{project.name}</h3>
                 </div>
                 
                 <div className="flex items-center space-x-1">
@@ -145,7 +169,13 @@ const ProjectManager: React.FC = () => {
               </div>
 
               {project.description && (
-                <p className="text-text/70 text-sm mb-3 line-clamp-2">{project.description}</p>
+                <p 
+                  className="text-text/70 text-sm mb-3 line-clamp-2 cursor-pointer hover:text-text/90 transition-colors duration-200"
+                  onClick={() => handleViewProject(project.id!)}
+                  title="View project time logs"
+                >
+                  {project.description}
+                </p>
               )}
 
               <div className="space-y-2 text-sm">

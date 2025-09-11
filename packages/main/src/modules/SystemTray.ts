@@ -5,12 +5,14 @@ import * as path from "path";
 import { createWindowManagerModule } from "./WindowManager.js";
 import type { AppInitConfig } from "../AppInitConfig.js";
 import { MainProcessTimer } from "../services/MainProcessTimer.js";
+import { ProjectService } from "../services/ProjectService.js";
 
 interface TrayWindowConfig {
   windowManager: ReturnType<typeof createWindowManagerModule>;
   preloadPath: string;
   rendererConfig: { path: string } | URL;
   mainProcessTimer: MainProcessTimer;
+  projectService: ProjectService;
 }
 
 class SystemTrayModule implements AppModule {
@@ -20,17 +22,20 @@ class SystemTrayModule implements AppModule {
   private preloadPath: string;
   private rendererConfig: { path: string } | URL;
   private mainProcessTimer: MainProcessTimer;
+  private projectService: ProjectService;
 
   constructor({
     windowManager,
     preloadPath,
     rendererConfig,
     mainProcessTimer,
+    projectService,
   }: TrayWindowConfig) {
     this.windowManager = windowManager;
     this.preloadPath = preloadPath;
     this.rendererConfig = rendererConfig;
     this.mainProcessTimer = mainProcessTimer;
+    this.projectService = projectService;
   }
 
   async enable({ app }: ModuleContext): Promise<void> {
@@ -76,16 +81,61 @@ class SystemTrayModule implements AppModule {
     if (!this.tray) return;
 
     const timerState = this.mainProcessTimer.getState();
-    const contextMenu = Menu.buildFromTemplate([
+    const projects = this.projectService.getAllProjects();
+    
+    const menuTemplate: any[] = [
       {
         label: timerState.isRunning ? "Stop Timer" : "Start Timer",
         click: () => {
           this.toggleTimer();
         },
-      },
-      {
+      }
+    ];
+
+    // Add current project info if available
+    if (timerState.projectName) {
+      menuTemplate.push({
+        label: `Current: ${timerState.projectName}`,
+        enabled: false, // Just for display
+      });
+    }
+
+    menuTemplate.push({
+      type: "separator",
+    });
+
+    // Add project selection submenu
+    if (projects.length > 0) {
+      const projectSubmenu = projects.map(project => ({
+        label: project.name,
+        type: 'radio' as const,
+        checked: timerState.projectId === project.id,
+        click: () => {
+          this.setActiveProject(project.id!);
+        },
+      }));
+
+      // Add "No Project" option
+      projectSubmenu.unshift({
+        label: "No Project",
+        type: 'radio' as const,
+        checked: timerState.projectId === null,
+        click: () => {
+          this.setActiveProject(null);
+        },
+      });
+
+      menuTemplate.push({
+        label: "Select Project",
+        submenu: projectSubmenu,
+      });
+
+      menuTemplate.push({
         type: "separator",
-      },
+      });
+    }
+
+    menuTemplate.push(
       {
         label: "Show App",
         click: () => {
@@ -104,9 +154,10 @@ class SystemTrayModule implements AppModule {
           }
           process.exit(0);
         },
-      },
-    ]);
+      }
+    );
 
+    const contextMenu = Menu.buildFromTemplate(menuTemplate);
     this.tray.setContextMenu(contextMenu);
   }
 
@@ -132,7 +183,7 @@ class SystemTrayModule implements AppModule {
 
     this.trayWindow = new BrowserWindow({
       width: 300,
-      height: 200,
+      height: 220,
       show: false,
       frame: false,
       resizable: false,
@@ -209,6 +260,25 @@ class SystemTrayModule implements AppModule {
       await this.mainProcessTimer.toggleTimer();
     } catch (error) {
       console.error('Failed to toggle timer from tray:', error);
+    }
+  }
+
+  private async setActiveProject(projectId: number | null): Promise<void> {
+    try {
+      // If timer is running, restart it with the new project
+      const timerState = this.mainProcessTimer.getState();
+      if (timerState.isRunning) {
+        const description = timerState.description;
+        await this.mainProcessTimer.stopTimer();
+        await this.mainProcessTimer.startTimer(description, projectId);
+      } else {
+        // If timer is not running, just update the state for next start
+        this.mainProcessTimer.setDefaultProject(projectId);
+      }
+      // Recreate context menu to reflect the change
+      this.createContextMenu();
+    } catch (error) {
+      console.error('Failed to set active project from tray:', error);
     }
   }
 

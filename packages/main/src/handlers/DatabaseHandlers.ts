@@ -33,6 +33,14 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, projectSer
     }
   });
 
+  ipcMain.handle('timer:setCurrentProject', async (_, projectId: number | null) => {
+    try {
+      await mainProcessTimer.setDefaultProject(projectId);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to set current project');
+    }
+  });
+
   // Time log CRUD operations
   ipcMain.handle('timelog:create', async (_, timeLog: Omit<TimeLog, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -119,6 +127,14 @@ export function setupDatabaseHandlers(timeLogService: TimeLogService, projectSer
       return await timeLogService.getRecentTimeLogs(limit);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to get recent time logs');
+    }
+  });
+
+  ipcMain.handle('timelog:getByProject', async (_, projectId: number) => {
+    try {
+      return await timeLogService.getTimeLogsByProject(projectId);
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to get time logs by project');
     }
   });
 

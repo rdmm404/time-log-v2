@@ -197,4 +197,14 @@ export class TimeLogService {
     `);
     return stmt.all(limit) as TimeLog[];
   }
+
+  // Get time logs for a specific project
+  getTimeLogsByProject(projectId: number): TimeLog[] {
+    const stmt = this.db.prepare(`
+      SELECT * FROM time_logs 
+      WHERE project_id = ?
+      ORDER BY start_time DESC
+    `);
+    return stmt.all(projectId) as TimeLog[];
+  }
 }
