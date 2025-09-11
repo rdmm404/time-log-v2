@@ -19,7 +19,7 @@ export class SettingsService {
     const database = this.db.getDatabase();
     const stmt = database.prepare('SELECT key, value FROM settings');
     const results = stmt.all() as Array<{ key: string; value: string }>;
-    
+
     const settings: Record<string, string> = {};
     for (const row of results) {
       settings[row.key] = row.value;
@@ -30,27 +30,27 @@ export class SettingsService {
   async setSetting(key: string, value: string): Promise<Setting> {
     const database = this.db.getDatabase();
     const now = new Date().toISOString();
-    
+
     // Use INSERT OR REPLACE to handle both insert and update
     const stmt = database.prepare(`
       INSERT OR REPLACE INTO settings (key, value, created_at, updated_at)
-      VALUES (?, ?, 
+      VALUES (?, ?,
         COALESCE((SELECT created_at FROM settings WHERE key = ?), ?),
         ?
       )
     `);
-    
+
     const result = stmt.run(key, value, key, now, now);
-    
+
     // Return the setting
-    const getStmt = database.prepare('SELECT * FROM settings WHERE key = ?');
+    const getStmt = database.prepare("SELECT * FROM settings WHERE key = ?");
     const setting = getStmt.get(key) as Setting;
-    
+
     // Handle startup setting special case
-    if (key === 'addToStartup') {
-      await this.handleStartupSetting(value === 'true');
+    if (key === "addToStartup") {
+      await this.handleStartupSetting(value === "true");
     }
-    
+
     return setting;
   }
 
@@ -91,7 +91,7 @@ export class SettingsService {
   // Initialize default settings
   async initializeDefaults(): Promise<void> {
     const existingSettings = await this.getAllSettings();
-    
+
     // Set default for addToStartup if not exists
     if (!('addToStartup' in existingSettings)) {
       await this.setSetting('addToStartup', 'false');

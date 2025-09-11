@@ -144,11 +144,11 @@ Implement simple CSV/Excel export for monthly hours
 
 ### Task 10 - Settings and Configuration
 Build settings panel for core app configuration
-**Status:** TODO
+**Status:** ✅ COMPLETED
 **Steps:**
-- Create settings UI
-- The only setting will be "Add to startup" which is just a checkbox.
-- Add settings persistence and validation
+- Create settings UI ✅
+- The only setting will be "Add to startup" which is just a checkbox. ✅
+- Add settings persistence and validation ✅
 
 ### Task 10.5 - Add to startup
 Implement the logic to add the app to system startup.
