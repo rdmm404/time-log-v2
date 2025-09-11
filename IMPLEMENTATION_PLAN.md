@@ -146,15 +146,24 @@ Implement simple CSV/Excel export for monthly hours
 Build settings panel for core app configuration
 **Status:** TODO
 **Steps:**
-- Create settings UI with tabs/sections
-- Add startup launch configuration
+- Create settings UI
+- The only setting will be "Add to startup" which is just a checkbox.
 - Add settings persistence and validation
 
-Not required
-- Implement theme switching (light/dark)
-- Build keybind customization interface
+### Task 10.5 - Add to startup
+Implement the logic to add the app to system startup.
+**Status:** TODO
+**Steps:**
+- Implement the logic to add the app to system startup.
+- Run this logic when the "Add to startup" setting is selected.
 
 ## Phase 5: Secondary Features
+
+### Task 10.6 - Settings enhancements
+**Status:** TODO
+**Steps:**
+- Implement theme switching (light/dark)
+- Build keybind customization interface
 
 ### Task 11 - Smart Reminder System
 Implement configurable reminders for timer activation

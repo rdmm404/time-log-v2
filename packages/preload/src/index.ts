@@ -171,4 +171,30 @@ export const mainWindowAPI = {
   }
 };
 
+// Settings API for renderer
+export const settingsAPI = {
+  // Get all settings
+  getAllSettings: (): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('settings:getAll'),
+
+  // Get a specific setting
+  getSetting: (key: string): Promise<string | null> =>
+    ipcRenderer.invoke('settings:get', key),
+
+  // Set a setting
+  setSetting: (key: string, value: string): Promise<any> =>
+    ipcRenderer.invoke('settings:set', key, value),
+
+  // Delete a setting
+  deleteSetting: (key: string): Promise<boolean> =>
+    ipcRenderer.invoke('settings:delete', key),
+
+  // Startup setting specific methods
+  getStartupSetting: (): Promise<boolean> =>
+    ipcRenderer.invoke('settings:getStartup'),
+
+  setStartupSetting: (enabled: boolean): Promise<boolean> =>
+    ipcRenderer.invoke('settings:setStartup', enabled),
+};
+
 export {sha256sum, versions, send};

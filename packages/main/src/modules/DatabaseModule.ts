@@ -24,6 +24,14 @@ export interface Project {
   updated_at: string; // ISO string
 }
 
+export interface Setting {
+  id?: number;
+  key: string;
+  value: string;
+  created_at: string; // ISO string
+  updated_at: string; // ISO string
+}
+
 export class DatabaseModule implements AppModule {
   private db: Database.Database | null = null;
 
@@ -79,6 +87,17 @@ export class DatabaseModule implements AppModule {
       )
     `;
 
+    // Create settings table
+    const createSettingsTable = `
+      CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `;
+
     // Create indexes for better performance
     const createIndexes = [
       'CREATE INDEX IF NOT EXISTS idx_time_logs_start_time ON time_logs(start_time)',
@@ -88,6 +107,7 @@ export class DatabaseModule implements AppModule {
 
     this.db.exec(createTimeLogsTable);
     this.db.exec(createProjectsTable);
+    this.db.exec(createSettingsTable);
     
     for (const indexQuery of createIndexes) {
       this.db.exec(indexQuery);
