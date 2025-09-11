@@ -18,7 +18,7 @@ function App() {
     return (
       <ProjectProvider>
         <TimerProvider>
-          <div className="p-2">
+          <div className="p-2 overflow-hidden">
             <TrayWindow />
           </div>
         </TimerProvider>

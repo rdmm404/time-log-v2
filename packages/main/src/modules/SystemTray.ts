@@ -82,14 +82,14 @@ class SystemTrayModule implements AppModule {
 
     const timerState = this.mainProcessTimer.getState();
     const projects = this.projectService.getAllProjects();
-    
+
     const menuTemplate: any[] = [
       {
         label: timerState.isRunning ? "Stop Timer" : "Start Timer",
         click: () => {
           this.toggleTimer();
         },
-      }
+      },
     ];
 
     // Add current project info if available
@@ -106,9 +106,9 @@ class SystemTrayModule implements AppModule {
 
     // Add project selection submenu
     if (projects.length > 0) {
-      const projectSubmenu = projects.map(project => ({
+      const projectSubmenu = projects.map((project) => ({
         label: project.name,
-        type: 'radio' as const,
+        type: "radio" as const,
         checked: timerState.projectId === project.id,
         click: () => {
           this.setActiveProject(project.id!);
@@ -118,7 +118,7 @@ class SystemTrayModule implements AppModule {
       // Add "No Project" option
       projectSubmenu.unshift({
         label: "No Project",
-        type: 'radio' as const,
+        type: "radio" as const,
         checked: timerState.projectId === null,
         click: () => {
           this.setActiveProject(null);
@@ -183,7 +183,7 @@ class SystemTrayModule implements AppModule {
 
     this.trayWindow = new BrowserWindow({
       width: 300,
-      height: 220,
+      height: 280,
       show: false,
       frame: false,
       resizable: false,
@@ -236,11 +236,11 @@ class SystemTrayModule implements AppModule {
     const trayBounds = this.tray.getBounds();
     const windowBounds = this.trayWindow.getBounds();
 
-    // Position the window near the tray icon
+    // Position the window near the tray icon (above it to prevent screen cutoff)
     const x = Math.round(
       trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2
     );
-    const y = Math.round(trayBounds.y + trayBounds.height + 4);
+    const y = Math.round(trayBounds.y - windowBounds.height + 50);
 
     this.trayWindow.setPosition(x, y, false);
     this.trayWindow.show();
@@ -259,7 +259,7 @@ class SystemTrayModule implements AppModule {
     try {
       await this.mainProcessTimer.toggleTimer();
     } catch (error) {
-      console.error('Failed to toggle timer from tray:', error);
+      console.error("Failed to toggle timer from tray:", error);
     }
   }
 
@@ -270,7 +270,10 @@ class SystemTrayModule implements AppModule {
       if (timerState.isRunning) {
         const description = timerState.description;
         await this.mainProcessTimer.stopTimer();
-        await this.mainProcessTimer.startTimer(description, projectId ?? undefined);
+        await this.mainProcessTimer.startTimer(
+          description,
+          projectId ?? undefined
+        );
       } else {
         // If timer is not running, just update the state for next start
         this.mainProcessTimer.setDefaultProject(projectId);
@@ -278,7 +281,7 @@ class SystemTrayModule implements AppModule {
       // Recreate context menu to reflect the change
       this.createContextMenu();
     } catch (error) {
-      console.error('Failed to set active project from tray:', error);
+      console.error("Failed to set active project from tray:", error);
     }
   }
 
@@ -332,7 +335,7 @@ class SystemTrayModule implements AppModule {
 
   private setupTimerListeners(): void {
     // Listen for timer state changes from MainProcessTimer
-    this.mainProcessTimer.on('state-changed', (timerState) => {
+    this.mainProcessTimer.on("state-changed", (timerState) => {
       this.updateTrayTooltip();
       this.updateTrayIcon();
       this.createContextMenu(); // Recreate menu to update start/stop label
@@ -358,7 +361,7 @@ class SystemTrayModule implements AppModule {
       try {
         return await this.mainProcessTimer.startTimer();
       } catch (error) {
-        console.error('Failed to start timer from tray:', error);
+        console.error("Failed to start timer from tray:", error);
         throw error;
       }
     });
@@ -367,7 +370,7 @@ class SystemTrayModule implements AppModule {
       try {
         return await this.mainProcessTimer.stopTimer();
       } catch (error) {
-        console.error('Failed to stop timer from tray:', error);
+        console.error("Failed to stop timer from tray:", error);
         throw error;
       }
     });
@@ -375,7 +378,7 @@ class SystemTrayModule implements AppModule {
     // Handle state requests from renderer or other processes
     ipcMain.on("timer-state-changed", (event, data) => {
       // Check if this is a request for current state
-      if (data && data.request === 'current-state') {
+      if (data && data.request === "current-state") {
         const timerState = this.mainProcessTimer.getState();
         // Send current state back to the requesting window
         event.sender.send("timer-state-update", timerState);
@@ -385,10 +388,10 @@ class SystemTrayModule implements AppModule {
     // Handle renderer requesting current state
     ipcMain.on("tray-request-current-state", (event) => {
       const timerState = this.mainProcessTimer.getState();
-      
+
       // Determine if request is from tray window or main window
       const isFromTrayWindow = event.sender === this.trayWindow?.webContents;
-      
+
       if (isFromTrayWindow) {
         // Send to tray window
         event.sender.send("timer-state-update", timerState);
@@ -398,7 +401,6 @@ class SystemTrayModule implements AppModule {
       }
     });
   }
-
 }
 
 export function createSystemTrayModule(config: TrayWindowConfig) {
