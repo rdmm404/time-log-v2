@@ -270,7 +270,7 @@ class SystemTrayModule implements AppModule {
       if (timerState.isRunning) {
         const description = timerState.description;
         await this.mainProcessTimer.stopTimer();
-        await this.mainProcessTimer.startTimer(description, projectId);
+        await this.mainProcessTimer.startTimer(description, projectId ?? undefined);
       } else {
         // If timer is not running, just update the state for next start
         this.mainProcessTimer.setDefaultProject(projectId);

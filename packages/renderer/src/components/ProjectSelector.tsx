@@ -34,12 +34,13 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 
   // Convert projects to dropdown options
   const projectOptions = projects.map(project => ({
-    value: project,
-    label: project.name
+    value: project.id!,
+    label: project.name,
+    project: project // Keep reference to full project object
   }));
 
-  const renderSelected = (option: { value: Project; label: string } | null) => {
-    const project = option?.value || selectedProject;
+  const renderSelected = (option: { value: number; label: string; project: Project } | null) => {
+    const project = option?.project || selectedProject;
     
     if (!project) {
       return <span className="text-text/50 truncate">{placeholder}</span>;
@@ -61,8 +62,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     );
   };
 
-  const renderOption = (option: { value: Project; label: string }) => {
-    const project = option.value;
+  const renderOption = (option: { value: number; label: string; project: Project }) => {
+    const project = option.project;
     
     return (
       <div className="flex items-center space-x-2">
@@ -89,10 +90,15 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     );
   };
 
+  const handleDropdownChange = (projectId: number | null) => {
+    const project = projectId ? projects.find(p => p.id === projectId) || null : null;
+    handleSelectProject(project);
+  };
+
   return (
     <CustomDropdown
-      value={selectedProject}
-      onChange={handleSelectProject}
+      value={selectedProject?.id || null}
+      onChange={handleDropdownChange}
       options={projectOptions}
       placeholder={placeholder}
       className={className}

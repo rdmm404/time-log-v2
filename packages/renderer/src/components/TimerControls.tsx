@@ -21,39 +21,53 @@ const TimerControls: React.FC<TimerControlsProps> = ({
 }) => {
   const { startTimer, stopTimer, setDescription, setCurrentProject } = useTimerActions();
   const { state: timerState } = useTimer();
-  const { activeProject, mostRecentProject, loadMostRecentProject, loadProjects, projects } = useProject();
+  const { activeProject, mostRecentProject, loadMostRecentProject, loadProjects, projects, loading } = useProject();
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   const [hasUserSelectedProject, setHasUserSelectedProject] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Reset selected project to MRU when MRU changes (including null for "No project")
+  // Initialize selected project to MRU when context finishes loading
   useEffect(() => {
-    if (!hasUserSelectedProject) {
+    if (!loading && !isInitialized) {
+      setSelectedProject(mostRecentProject);
+      setIsInitialized(true);
+    }
+  }, [loading, isInitialized, mostRecentProject]);
+
+  // Reset selected project to MRU when MRU changes (only when user hasn't manually selected)
+  useEffect(() => {
+    if (!hasUserSelectedProject && isInitialized) {
       setSelectedProject(mostRecentProject);
     }
-  }, [mostRecentProject, hasUserSelectedProject]);
+  }, [mostRecentProject, hasUserSelectedProject, isInitialized]);
 
-  // Sync selected project with timer state (for changes from tray)
+  // Sync selected project with timer state (only when timer is running - for changes from tray)
   useEffect(() => {
-    if (timerState.projectId !== null) {
-      // Find the project by ID
-      const currentProject = projects.find(p => p.id === timerState.projectId);
-      if (currentProject && selectedProject?.id !== currentProject.id) {
-        setSelectedProject(currentProject);
+    // Only sync when timer is actually running - this indicates external changes from tray
+    if (timerState.isRunning && timerState.currentSession) {
+      const runningProjectId = timerState.currentSession.project_id;
+      
+      if (runningProjectId !== null) {
+        // Find the project by ID
+        const currentProject = projects.find(p => p.id === runningProjectId);
+        if (currentProject && selectedProject?.id !== currentProject.id) {
+          setSelectedProject(currentProject);
+          setHasUserSelectedProject(true);
+        }
+      } else if (runningProjectId === null && selectedProject !== null) {
+        // Running timer has no project, but we have one selected
+        setSelectedProject(null);
         setHasUserSelectedProject(true);
       }
-    } else if (timerState.projectId === null && selectedProject !== null) {
-      // Timer state says no project, but we have one selected
-      setSelectedProject(null);
-      setHasUserSelectedProject(true);
     }
-  }, [timerState.projectId, projects, selectedProject]);
+  }, [timerState.isRunning, timerState.currentSession, projects, selectedProject]);
 
   const handleStart = async () => {
     try {
       setError(null);
-      const projectToUse = selectedProject || activeProject;
+      const projectToUse = selectedProject; // Use exactly what user selected, including null for "No project"
       await startTimer(description, projectToUse?.id);
       setDescription(description);
 

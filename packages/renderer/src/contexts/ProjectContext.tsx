@@ -28,7 +28,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   // Load projects from the database
   const loadProjects = async () => {
     try {
-      setLoading(true);
       const projectsData = await projectAPI.getAllProjects();
       setProjects(projectsData);
       
@@ -46,8 +45,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -74,8 +71,22 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   // Load projects and MRU project on mount
   useEffect(() => {
-    loadProjects();
-    loadMostRecentProject();
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        // Load both projects and MRU in parallel
+        await Promise.all([
+          loadProjects(),
+          loadMostRecentProject()
+        ]);
+      } catch (error) {
+        console.error('ProjectContext: Failed to load initial data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadInitialData();
   }, []);
 
   const value: ProjectContextValue = {
