@@ -135,11 +135,12 @@ Implement simple CSV/Excel export for monthly hours
 - ✅ Add a new type of report that simply exports all time logs, also with project information
     - this should be similar to the existing one, just use SQL for the report and data aggregation and TS should only be used for the CSV/XLSX formatting logic.
 
-### Task 9.6 - Project enhancements
-- Add new view for seeing a list of all time logs per project, when a project is clicked on the "Projects Page"
-- Add current project information to the system tray widget (and allow changing project from context menu)
-- Update new project modal so that clicking anywhere outside closes it
-- Also fix the system tray widget window to remove scroll
+### Task 9.6 - Project enhancements ✅ DONE
+- Add new view for seeing a list of all time logs per project, when a project is clicked on the "Projects Page" ✅
+- Add current project information to the system tray widget (and allow changing project from context menu) ✅
+- Update new project modal so that clicking anywhere outside closes it ✅
+- Also fix the system tray widget window to remove scroll ✅
+- BONUS: Added bidirectional project state synchronization between main window and system tray ✅
 
 ### Task 10 - Settings and Configuration
 Build settings panel for core app configuration
